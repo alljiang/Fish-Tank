@@ -1,10 +1,7 @@
 
 /* Hardware Configuration:
-    - Add jumper to set SpinEnable to A-STEP
+    - Add jumper to set SpinEnable to PIN_X_LIM
     - Add jumper to set SpinDir to A-DIR
-    - Add jumper between X.STEP and X.ENDSTOP ?
-    - Add jumper between A.STEP and Y.ENDSTOP
-    - Add jumper between Z.STEP and Z.ENDSTOP
     - Configure max current potentiometer on each driver to 0.8A
         https://ardufocus.com/howto/a4988-motor-current-tuning/
         Make sure to confirm sensing resitor value
@@ -26,6 +23,8 @@
 #include <Adafruit_NeoPixel.h>
 #include <FastGPIO.h>
 
+#include "command.h"
+
 // Motor Driver Properties
 #define MAX_PPS 1000
 #define PULSE_WIDTH_US (1000000 / MAX_PPS / 2)
@@ -33,14 +32,14 @@
 
 // A4988 Shield
 #define PIN_A4988_EN 8  // enable pin across all drivers
-#define PIN_Y_DIR 6     // FL
+#define PIN_Y_DIR 6     // BR
 #define PIN_A_DIR 13    // FR
 #define PIN_X_DIR 5     // BL
 #define PIN_Z_DIR 7     // BR
-#define PIN_Y_STP 3     // FL
-#define PIN_A_STP 12    // FR
-#define PIN_X_STP 2     // BL
-#define PIN_Z_STP 4     // BR
+#define PIN_Y_STP 3
+// #define PIN_A_STP 12
+#define PIN_X_STP 2
+#define PIN_Z_STP 4
 
 #define PIN_RX 0  // Serial
 #define PIN_TX 1  // Serial
@@ -54,6 +53,8 @@
 #define PIN_COOLANT_ENABLE A3  // NC
 #define PIN_SCL A4             // NC
 #define PIN_SDA A5             // Using as Neopixel Data
+
+#define PIN_A_STP PIN_X_LIM
 
 // Neopixels
 #define PIN PIN_SDA
@@ -71,9 +72,14 @@ uint16_t _velocity_br = 0;
 uint32_t _last_pulse_us[4] = {0, 0, 0, 0};
 bool _pulse_high[4]        = {false, false, false, false};
 
+uint8_t _tx_data[32];
+
 void
 setup() {
-    uint8_t i;
+	uint8_t i;
+
+	Command_Initialize();
+
 	pinMode(PIN_A4988_EN, OUTPUT);
 
 	// start reset
@@ -97,18 +103,18 @@ setup() {
 	pinMode(PIN_COOLANT_ENABLE, INPUT);
 	pinMode(PIN_SCL, INPUT);
 	pinMode(PIN_SDA, INPUT);
-    
-    pixels.begin();
-    for (i = 0; i < NUMPIXELS; i++) {
-        pixels.setPixelColor(i, pixels.Color(255, 255, 255));
-        pixels.setBrightness(255);
+
+	pixels.begin();
+	for (i = 0; i < NUMPIXELS; i++) {
+		pixels.setPixelColor(i, pixels.Color(255, 255, 255));
+		pixels.setBrightness(255);
 	}
-    pixels.show();
+	pixels.show();
 
-    delay(50);
+	delay(50);
 
-    // end reset
-    digitalWrite(PIN_A4988_EN, LOW);
+	// end reset
+	digitalWrite(PIN_A4988_EN, LOW);
 }
 
 void
@@ -125,10 +131,10 @@ task_motor_control() {
 	speed[3] = abs(_velocity_br);
 
 	// Set direction
-	FastGPIO::Pin<PIN_Y_DIR>::setOutput(_velocity_fl > 0 ? HIGH : LOW);
-	FastGPIO::Pin<PIN_A_DIR>::setOutput(_velocity_fr > 0 ? HIGH : LOW);
-	FastGPIO::Pin<PIN_X_DIR>::setOutput(_velocity_bl > 0 ? HIGH : LOW);
-	FastGPIO::Pin<PIN_Z_DIR>::setOutput(_velocity_br > 0 ? HIGH : LOW);
+	FastGPIO::Pin<PIN_Z_DIR>::setOutput(_velocity_fl < 0 ? HIGH : LOW);
+	FastGPIO::Pin<PIN_X_DIR>::setOutput(_velocity_fr > 0 ? HIGH : LOW);
+	FastGPIO::Pin<PIN_A_DIR>::setOutput(_velocity_bl < 0 ? HIGH : LOW);
+	FastGPIO::Pin<PIN_Y_DIR>::setOutput(_velocity_br > 0 ? HIGH : LOW);
 
 	for (i = 0; i < 4; i++) {
 		speed[i] = constrain(speed[i], 0, 1000);
@@ -154,10 +160,10 @@ task_motor_control() {
 	}
 
 	// Set outputs
-	FastGPIO::Pin<PIN_Y_STP>::setOutput(digital_output[0] ? HIGH : LOW);
-	FastGPIO::Pin<PIN_A_STP>::setOutput(digital_output[1] ? HIGH : LOW);
-	FastGPIO::Pin<PIN_X_STP>::setOutput(digital_output[2] ? HIGH : LOW);
-	FastGPIO::Pin<PIN_Z_STP>::setOutput(digital_output[3] ? HIGH : LOW);
+	FastGPIO::Pin<PIN_Z_STP>::setOutput(digital_output[0] ? HIGH : LOW);
+	FastGPIO::Pin<PIN_X_STP>::setOutput(digital_output[1] ? HIGH : LOW);
+	FastGPIO::Pin<PIN_A_STP>::setOutput(digital_output[2] ? HIGH : LOW);
+	FastGPIO::Pin<PIN_Y_STP>::setOutput(digital_output[3] ? HIGH : LOW);
 
 	_pulse_high[0] = digital_output[0];
 	_pulse_high[1] = digital_output[1];
@@ -167,10 +173,52 @@ task_motor_control() {
 
 void
 loop() {
-	_velocity_fl = 100;
-	_velocity_fr = 100;
-	_velocity_bl = 10;
-	_velocity_br = 100;
+	int rv;
+	Packet packet;
+	bool send_ack = false;
+
+	Command_readToQueue();
+	rv = Command_parseQueue(&packet);
+
+	if (rv == 0) {
+		Serial.println("kekw");
+        Serial.write(packet.header);
+        Serial.write(packet.length);
+        Serial.flush();
+		if (packet.header == CMD_HEADER_SET_VELOCITY &&
+		    packet.length == CMD_LENGTH_SET_VELOCITY) {
+			int16_t velocity_forward   = packet.data[0] << 8 | packet.data[1];
+			int16_t velocity_right     = packet.data[2] << 8 | packet.data[3];
+			int16_t velocity_clockwise = packet.data[4] << 8 | packet.data[5];
+
+			velocity_forward   = constrain(velocity_forward, -1000, 1000);
+			velocity_right     = constrain(velocity_right, -1000, 1000);
+			velocity_clockwise = constrain(velocity_clockwise, -1000, 1000);
+
+			// calculate mecanum wheel velocities
+			_velocity_fl =
+			    velocity_forward + velocity_right + velocity_clockwise;
+			_velocity_fr =
+			    velocity_forward - velocity_right - velocity_clockwise;
+			_velocity_bl =
+			    velocity_forward - velocity_right + velocity_clockwise;
+			_velocity_br =
+			    velocity_forward + velocity_right - velocity_clockwise;
+
+			send_ack = true;
+		} else if (packet.header == CMD_HEADER_REQUEST_ACK &&
+		           packet.length == CMD_LENGTH_REQUEST_ACK) {
+			send_ack = true;
+		}
+	}
+
+	if (send_ack) {
+		packet.header = CMD_HEADER_ACK;
+		packet.length = CMD_LENGTH_ACK;
+		packet.data   = _tx_data;
+
+		Command_sendData(&packet);
+	}
 
 	task_motor_control();
 }

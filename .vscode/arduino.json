@@ -2,5 +2,5 @@
     "board": "arduino:avr:uno",
     "programmer": "arduino:avrisp",
     "sketch": "Arduino-Motor-Controller\\Arduino-Motor-Controller.ino",
-    "port": "COM27"
+    "port": "COM3"
 }
