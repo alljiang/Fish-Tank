@@ -51,22 +51,21 @@
 #define PIN_FEED_HOLD A1       // NC
 #define PIN_CYCLE_START A2     // NC
 #define PIN_COOLANT_ENABLE A3  // NC
-#define PIN_SCL A4             // NC
-#define PIN_SDA A5             // Using as Neopixel Data
+#define PIN_SDA A4             // Using as Neopixel Data
+#define PIN_SCL A5             // NC
 
 #define PIN_A_STP PIN_X_LIM
 
 // Neopixels
-#define PIN PIN_SDA
 #define NUMPIXELS 4
 
-Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN_SDA, NEO_GRB + NEO_KHZ800);
 
 // [-1000, 1000]
-uint16_t _velocity_fl = 0;
-uint16_t _velocity_fr = 0;
-uint16_t _velocity_bl = 0;
-uint16_t _velocity_br = 0;
+int16_t _velocity_fl = 0;
+int16_t _velocity_fr = 0;
+int16_t _velocity_bl = 0;
+int16_t _velocity_br = 0;
 
 // FL, FR, BL, BR
 uint32_t _last_pulse_us[4] = {0, 0, 0, 0};
@@ -83,7 +82,7 @@ setup() {
 	pinMode(PIN_A4988_EN, OUTPUT);
 
 	// start reset
-	digitalWrite(PIN_A4988_EN, HIGH);
+	FastGPIO::Pin<PIN_A4988_EN>::setOutputHigh();
 
 	FastGPIO::Pin<PIN_Y_DIR>::setOutputLow();
 	FastGPIO::Pin<PIN_A_DIR>::setOutputLow();
@@ -104,17 +103,21 @@ setup() {
 	pinMode(PIN_SCL, INPUT);
 	pinMode(PIN_SDA, INPUT);
 
+	digitalWrite(PIN_SDA, HIGH);
+	digitalWrite(PIN_SDA, LOW);
+	digitalWrite(PIN_SDA, HIGH);
+
 	pixels.begin();
 	for (i = 0; i < NUMPIXELS; i++) {
 		pixels.setPixelColor(i, pixels.Color(255, 255, 255));
-		pixels.setBrightness(255);
+		pixels.setBrightness(5);
 	}
 	pixels.show();
 
 	delay(50);
 
 	// end reset
-	digitalWrite(PIN_A4988_EN, LOW);
+	FastGPIO::Pin<PIN_A4988_EN>::setOutputLow();
 }
 
 void
@@ -124,6 +127,7 @@ task_motor_control() {
 	bool digital_output[4];
 	uint32_t time_micros = micros();
 	uint8_t i;
+	bool disable_steppers = true;
 
 	speed[0] = abs(_velocity_fl);
 	speed[1] = abs(_velocity_fr);
@@ -138,13 +142,16 @@ task_motor_control() {
 
 	for (i = 0; i < 4; i++) {
 		speed[i] = constrain(speed[i], 0, 1000);
+		if (speed[i] > 0) {
+			disable_steppers = false;
+		}
 
 		if (speed[i] == 0) {
 			digital_output[i] = false;
 		} else {
 			// is it time to pulse?
 			// or is the pulse high and it's time to turn it off?
-			if (time_micros - _last_pulse_us[i] +
+			if (abs(time_micros - _last_pulse_us[i]) +
 			            PULSE_WIDTH_COMPENSATION_OFFSET_US >=
 			        PULSE_WIDTH_US * 2 * 1000 / speed[i] &&
 			    !_pulse_high[i]) {
@@ -157,6 +164,11 @@ task_motor_control() {
 				digital_output[i] = _pulse_high[i];
 			}
 		}
+	}
+	if (disable_steppers) {
+		FastGPIO::Pin<PIN_A4988_EN>::setOutputHigh();
+	} else {
+		FastGPIO::Pin<PIN_A4988_EN>::setOutputLow();
 	}
 
 	// Set outputs
@@ -171,53 +183,109 @@ task_motor_control() {
 	_pulse_high[3] = digital_output[3];
 }
 
+int state      = 0;
+int64_t start_time = 0;
+
 void
 loop() {
 	int rv;
 	Packet packet;
 	bool send_ack = false;
 
-	Command_readToQueue();
-	rv = Command_parseQueue(&packet);
+	// Command_readToQueue();
+	// rv = Command_parseQueue(&packet);
 
-	if (rv == 0) {
-		Serial.println("kekw");
-        Serial.write(packet.header);
-        Serial.write(packet.length);
-        Serial.flush();
-		if (packet.header == CMD_HEADER_SET_VELOCITY &&
-		    packet.length == CMD_LENGTH_SET_VELOCITY) {
-			int16_t velocity_forward   = packet.data[0] << 8 | packet.data[1];
-			int16_t velocity_right     = packet.data[2] << 8 | packet.data[3];
-			int16_t velocity_clockwise = packet.data[4] << 8 | packet.data[5];
+	// if (rv == 0) {
+	//     Serial.write(packet.header);
+	//     Serial.flush();
+	// 	if (packet.header == CMD_HEADER_SET_VELOCITY &&
+	// 	    packet.length == CMD_LENGTH_SET_VELOCITY) {
+	// 		int16_t velocity_forward   = packet.data[0] << 8 | packet.data[1];
+	// 		int16_t velocity_right     = packet.data[2] << 8 | packet.data[3];
+	// 		int16_t velocity_clockwise = packet.data[4] << 8 | packet.data[5];
 
-			velocity_forward   = constrain(velocity_forward, -1000, 1000);
-			velocity_right     = constrain(velocity_right, -1000, 1000);
-			velocity_clockwise = constrain(velocity_clockwise, -1000, 1000);
+	// 		velocity_forward   = constrain(velocity_forward, -1000, 1000);
+	// 		velocity_right     = constrain(velocity_right, -1000, 1000);
+	// 		velocity_clockwise = constrain(velocity_clockwise, -1000, 1000);
 
-			// calculate mecanum wheel velocities
-			_velocity_fl =
-			    velocity_forward + velocity_right + velocity_clockwise;
-			_velocity_fr =
-			    velocity_forward - velocity_right - velocity_clockwise;
-			_velocity_bl =
-			    velocity_forward - velocity_right + velocity_clockwise;
-			_velocity_br =
-			    velocity_forward + velocity_right - velocity_clockwise;
+	// 		// calculate mecanum wheel velocities
+	// 		_velocity_fl =
+	// 		    velocity_forward + velocity_right + velocity_clockwise;
+	// 		_velocity_fr =
+	// 		    velocity_forward - velocity_right - velocity_clockwise;
+	// 		_velocity_bl =
+	// 		    velocity_forward - velocity_right + velocity_clockwise;
+	// 		_velocity_br =
+	// 		    velocity_forward + velocity_right - velocity_clockwise;
 
-			send_ack = true;
-		} else if (packet.header == CMD_HEADER_REQUEST_ACK &&
-		           packet.length == CMD_LENGTH_REQUEST_ACK) {
-			send_ack = true;
+	// 		send_ack = true;
+	// 	} else if (packet.header == CMD_HEADER_REQUEST_ACK &&
+	// 	           packet.length == CMD_LENGTH_REQUEST_ACK) {
+	// 		send_ack = true;
+	// 	}
+	// }
+
+	// if (send_ack) {
+	// 	packet.header = CMD_HEADER_ACK;
+	// 	packet.length = CMD_LENGTH_ACK;
+	// 	packet.data   = _tx_data;
+
+	// 	Command_sendData(&packet);
+	// }
+
+	if (state == 0) {
+		start_time = millis();
+		state      = 1;
+	} else if (state == 1) {
+		if (millis() - start_time > 1000) {
+			state      = 2;
+			start_time = millis();
+
+			_velocity_fl = 0;
+			_velocity_fr = 0;
+			_velocity_bl = 0;
+			_velocity_br = 0;
 		}
-	}
+	} else if (state == 2) {
+		if (millis() - start_time > 1000) {
+			state      = 3;
+			start_time = millis();
 
-	if (send_ack) {
-		packet.header = CMD_HEADER_ACK;
-		packet.length = CMD_LENGTH_ACK;
-		packet.data   = _tx_data;
+			_velocity_fl = 50;
+			_velocity_fr = 0;
+			_velocity_bl = 0;
+			_velocity_br = 0;
+		}
+	} else if (state == 3) {
+		if (millis() - start_time > 1000) {
+			state      = 1;
+			start_time = millis();
 
-		Command_sendData(&packet);
+			_velocity_fl = -50;
+			_velocity_fr = 0;
+			_velocity_bl = 0;
+			_velocity_br = 0;
+		}
+	} else if (state == 4) {
+		if (millis() - start_time > 3000) {
+			state      = 5;
+			start_time = millis();
+
+			_velocity_fl = -500;
+			_velocity_fr = 0;
+			_velocity_bl = 0;
+			_velocity_br = 0;
+		}
+	} else if (state == 5) {
+		if (millis() - start_time > 3000) {
+			state      = 1;
+			start_time = millis();
+
+			_velocity_fl = -100;
+			_velocity_fr = 0;
+			_velocity_bl = 0;
+			_velocity_br = 0;
+		}
 	}
 
 	task_motor_control();

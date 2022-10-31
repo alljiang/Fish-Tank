@@ -17,15 +17,7 @@ if serial_port == None:
 
 print ("\nFish tank connected!")
 
-# [-1000, 1000] for each axis
-def send_velocity(vel_forward, vel_right, vel_clockwise):
-    data = bytearray()
-    data.extend(vel_forward.to_bytes(2, "big", signed=True))
-    data.extend(vel_right.to_bytes(2, "big", signed=True))
-    data.extend(vel_clockwise.to_bytes(2, "big", signed=True))
-
-    communication.send_packet(serial_port, 0xA0, data)
-
+def expect_ack():
     # await acknowledgement
     rx_buffer = bytearray()
     time_ms = time.time() * 1000
@@ -64,6 +56,21 @@ def send_velocity(vel_forward, vel_right, vel_clockwise):
             print(rx_buffer)
             exit()
 
+def send_request_ack():
+    data = bytearray()
+    communication.send_packet(serial_port, 0xA1, data)
+    expect_ack()
+
+# [-1000, 1000] for each axis
+def send_velocity(vel_forward, vel_right, vel_clockwise):
+    data = bytearray()
+    data.extend(vel_forward.to_bytes(2, "big", signed=True))
+    data.extend(vel_right.to_bytes(2, "big", signed=True))
+    data.extend(vel_clockwise.to_bytes(2, "big", signed=True))
+
+    communication.send_packet(serial_port, 0xA0, data)
+    expect_ack()
+
 while True:
     print("\nEnter a command")
     command = input("Command: ")
@@ -75,5 +82,7 @@ while True:
         send_velocity(-500, 0, 0)
     elif command == "3":
         send_velocity(512, 0, 0)
+    elif command == "4":
+        send_request_ack()
     else:
         print("Invalid command")
