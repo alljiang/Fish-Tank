@@ -74,6 +74,16 @@ bool _pulse_high[4]        = {false, false, false, false};
 uint8_t _tx_data[32];
 
 void
+set_lights(uint8_t r, uint8_t g, uint8_t b) {
+	int i;
+
+	for (i = 0; i < NUMPIXELS; i++) {
+		pixels.setPixelColor(i, pixels.Color(r, g, b));
+		pixels.show();
+	}
+}
+
+void
 setup() {
 	uint8_t i;
 
@@ -108,11 +118,7 @@ setup() {
 	digitalWrite(PIN_SDA, HIGH);
 
 	pixels.begin();
-	for (i = 0; i < NUMPIXELS; i++) {
-		pixels.setPixelColor(i, pixels.Color(255, 255, 255));
-		pixels.setBrightness(5);
-	}
-	pixels.show();
+	set_lights(1, 1, 1);
 
 	delay(50);
 
@@ -183,110 +189,113 @@ task_motor_control() {
 	_pulse_high[3] = digital_output[3];
 }
 
-int state      = 0;
+int state          = 0;
 int64_t start_time = 0;
+
+Packet packet;
 
 void
 loop() {
 	int rv;
-	Packet packet;
 	bool send_ack = false;
 
-	// Command_readToQueue();
-	// rv = Command_parseQueue(&packet);
+	Command_readToQueue();
+	rv = Command_parseQueue(&packet);
 
-	// if (rv == 0) {
-	//     Serial.write(packet.header);
-	//     Serial.flush();
-	// 	if (packet.header == CMD_HEADER_SET_VELOCITY &&
-	// 	    packet.length == CMD_LENGTH_SET_VELOCITY) {
-	// 		int16_t velocity_forward   = packet.data[0] << 8 | packet.data[1];
-	// 		int16_t velocity_right     = packet.data[2] << 8 | packet.data[3];
-	// 		int16_t velocity_clockwise = packet.data[4] << 8 | packet.data[5];
+	if (rv == 0) {
+		if (packet.header == CMD_HEADER_SET_VELOCITY &&
+		    packet.length == CMD_LENGTH_SET_VELOCITY) {
+			int16_t velocity_forward   = packet.data[0] << 8 | packet.data[1];
+			int16_t velocity_right     = packet.data[2] << 8 | packet.data[3];
+			int16_t velocity_clockwise = packet.data[4] << 8 | packet.data[5];
 
-	// 		velocity_forward   = constrain(velocity_forward, -1000, 1000);
-	// 		velocity_right     = constrain(velocity_right, -1000, 1000);
-	// 		velocity_clockwise = constrain(velocity_clockwise, -1000, 1000);
+			velocity_forward   = constrain(velocity_forward, -1000, 1000);
+			velocity_right     = constrain(velocity_right, -1000, 1000);
+			velocity_clockwise = constrain(velocity_clockwise, -1000, 1000);
 
-	// 		// calculate mecanum wheel velocities
-	// 		_velocity_fl =
-	// 		    velocity_forward + velocity_right + velocity_clockwise;
-	// 		_velocity_fr =
-	// 		    velocity_forward - velocity_right - velocity_clockwise;
-	// 		_velocity_bl =
-	// 		    velocity_forward - velocity_right + velocity_clockwise;
-	// 		_velocity_br =
-	// 		    velocity_forward + velocity_right - velocity_clockwise;
+			// calculate mecanum wheel velocities
+			_velocity_fl =
+			    velocity_forward + velocity_right + velocity_clockwise;
+			_velocity_fr =
+			    velocity_forward - velocity_right - velocity_clockwise;
+			_velocity_bl =
+			    velocity_forward - velocity_right + velocity_clockwise;
+			_velocity_br =
+			    velocity_forward + velocity_right - velocity_clockwise;
 
-	// 		send_ack = true;
-	// 	} else if (packet.header == CMD_HEADER_REQUEST_ACK &&
-	// 	           packet.length == CMD_LENGTH_REQUEST_ACK) {
-	// 		send_ack = true;
-	// 	}
-	// }
-
-	// if (send_ack) {
-	// 	packet.header = CMD_HEADER_ACK;
-	// 	packet.length = CMD_LENGTH_ACK;
-	// 	packet.data   = _tx_data;
-
-	// 	Command_sendData(&packet);
-	// }
-
-	if (state == 0) {
-		start_time = millis();
-		state      = 1;
-	} else if (state == 1) {
-		if (millis() - start_time > 1000) {
-			state      = 2;
-			start_time = millis();
-
-			_velocity_fl = 0;
-			_velocity_fr = 0;
-			_velocity_bl = 0;
-			_velocity_br = 0;
-		}
-	} else if (state == 2) {
-		if (millis() - start_time > 1000) {
-			state      = 3;
-			start_time = millis();
-
-			_velocity_fl = 50;
-			_velocity_fr = 0;
-			_velocity_bl = 0;
-			_velocity_br = 0;
-		}
-	} else if (state == 3) {
-		if (millis() - start_time > 1000) {
-			state      = 1;
-			start_time = millis();
-
-			_velocity_fl = -50;
-			_velocity_fr = 0;
-			_velocity_bl = 0;
-			_velocity_br = 0;
-		}
-	} else if (state == 4) {
-		if (millis() - start_time > 3000) {
-			state      = 5;
-			start_time = millis();
-
-			_velocity_fl = -500;
-			_velocity_fr = 0;
-			_velocity_bl = 0;
-			_velocity_br = 0;
-		}
-	} else if (state == 5) {
-		if (millis() - start_time > 3000) {
-			state      = 1;
-			start_time = millis();
-
-			_velocity_fl = -100;
-			_velocity_fr = 0;
-			_velocity_bl = 0;
-			_velocity_br = 0;
+			send_ack = true;
+		} else if (packet.header == CMD_HEADER_REQUEST_ACK &&
+		           packet.length == CMD_LENGTH_REQUEST_ACK) {
+			send_ack = true;
+		} else if (packet.header == CMD_HEADER_SET_LIGHT &&
+		           packet.length == CMD_LENGTH_SET_LIGHT) {
+			set_lights(packet.data[0], packet.data[1], packet.data[2]);
+			send_ack = true;
 		}
 	}
+
+	if (send_ack) {
+		packet.header = CMD_HEADER_ACK;
+		packet.length = CMD_LENGTH_ACK;
+		packet.data   = _tx_data;
+
+		Command_sendData(&packet);
+	}
+
+	// if (state == 0) {
+	// 	start_time = millis();
+	// 	state      = 1;
+	// } else if (state == 1) {
+	// 	if (millis() - start_time > 1000) {
+	// 		state      = 2;
+	// 		start_time = millis();
+
+	// 		_velocity_fl = 0;
+	// 		_velocity_fr = 0;
+	// 		_velocity_bl = 0;
+	// 		_velocity_br = 0;
+	// 	}
+	// } else if (state == 2) {
+	// 	if (millis() - start_time > 1000) {
+	// 		state      = 3;
+	// 		start_time = millis();
+
+	// 		_velocity_fl = 50;
+	// 		_velocity_fr = 0;
+	// 		_velocity_bl = 0;
+	// 		_velocity_br = 0;
+	// 	}
+	// } else if (state == 3) {
+	// 	if (millis() - start_time > 1000) {
+	// 		state      = 1;
+	// 		start_time = millis();
+
+	// 		_velocity_fl = -50;
+	// 		_velocity_fr = 0;
+	// 		_velocity_bl = 0;
+	// 		_velocity_br = 0;
+	// 	}
+	// } else if (state == 4) {
+	// 	if (millis() - start_time > 3000) {
+	// 		state      = 5;
+	// 		start_time = millis();
+
+	// 		_velocity_fl = -500;
+	// 		_velocity_fr = 0;
+	// 		_velocity_bl = 0;
+	// 		_velocity_br = 0;
+	// 	}
+	// } else if (state == 5) {
+	// 	if (millis() - start_time > 3000) {
+	// 		state      = 1;
+	// 		start_time = millis();
+
+	// 		_velocity_fl = -100;
+	// 		_velocity_fr = 0;
+	// 		_velocity_bl = 0;
+	// 		_velocity_br = 0;
+	// 	}
+	// }
 
 	task_motor_control();
 }

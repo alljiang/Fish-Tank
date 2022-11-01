@@ -57,4 +57,4 @@ class Communication:
 
         data.extend(checksum)
         serial.write(data)
-        print("Sent: " + str(data.hex()))
+        # print("Sent: " + str(data.hex()))

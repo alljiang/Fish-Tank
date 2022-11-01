@@ -32,9 +32,8 @@ def expect_ack():
         try:
             read_byte = bytes(serial_port.read(serial_port.inWaiting()))
             rx_buffer.extend(read_byte)
-            if (len(rx_buffer) > 0):
-                print("Received: " + str(rx_buffer))
-                break
+            # if (len(rx_buffer) > 0):
+            #     print("Received: " + str(rx_buffer))
         except:
             print("\nERROR: Failed to read from serial port")
             exit()
@@ -49,17 +48,12 @@ def expect_ack():
 
         if rx_buffer[1] == 0x01 and \
             rx_buffer[2] == 0:
-            print("\nReceive ACK\n")
+            print("Received ACK")
             break
         else:
             print("\nERROR: Receieved invalid acknowledgement")
             print(rx_buffer)
             exit()
-
-def send_request_ack():
-    data = bytearray()
-    communication.send_packet(serial_port, 0xA1, data)
-    expect_ack()
 
 # [-1000, 1000] for each axis
 def send_velocity(vel_forward, vel_right, vel_clockwise):
@@ -68,7 +62,26 @@ def send_velocity(vel_forward, vel_right, vel_clockwise):
     data.extend(vel_right.to_bytes(2, "big", signed=True))
     data.extend(vel_clockwise.to_bytes(2, "big", signed=True))
 
-    communication.send_packet(serial_port, 0xA0, data)
+    communication.send_packet(serial_port, CMD_HEADER_SET_VELOCITY, data)
+    expect_ack()
+
+def send_request_ack():
+    data = bytearray()
+    communication.send_packet(serial_port, CMD_HEADER_REQUEST_ACK, data)
+    expect_ack()
+
+def send_light(r, g, b):
+    # r, g, b should be between 0 and 255
+    r = max(0, min(255, r))
+    g = max(0, min(255, g))
+    b = max(0, min(255, b))
+
+    data = bytearray()
+    data.append(r)
+    data.append(g)
+    data.append(b)
+
+    communication.send_packet(serial_port, CMD_HEADER_SET_LIGHT, data)
     expect_ack()
 
 while True:
@@ -81,8 +94,8 @@ while True:
     elif command == "2":
         send_velocity(-500, 0, 0)
     elif command == "3":
-        send_velocity(512, 0, 0)
+        send_light(0, 0, 0)
     elif command == "4":
-        send_request_ack()
+        send_light(1, 1, 1)
     else:
         print("Invalid command")
