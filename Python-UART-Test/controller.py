@@ -90,12 +90,14 @@ while True:
     if command == "0":
         send_velocity(0, 0, 0)
     elif command == "1":
-        send_velocity(513, 0, 0)
+        send_velocity(50, 0, 0)
     elif command == "2":
-        send_velocity(-500, 0, 0)
+        send_velocity(-50, 0, 0)
     elif command == "3":
         send_light(0, 0, 0)
+        send_velocity(0, 50, 0)
     elif command == "4":
         send_light(1, 1, 1)
+        send_velocity(0, -50, 0)
     else:
         print("Invalid command")

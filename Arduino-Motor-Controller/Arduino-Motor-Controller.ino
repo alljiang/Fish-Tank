@@ -5,7 +5,7 @@
     - Configure max current potentiometer on each driver to 0.8A
         https://ardufocus.com/howto/a4988-motor-current-tuning/
         Make sure to confirm sensing resitor value
-        Vref = 0.8A * 8 * 0.1ohm = 0.64V
+        Vref = 2A * 8 * 0.1ohm = 1.6V
     - Attach Neopixel Jumpers
         - 5V to 5V
         - GND to GND
@@ -35,7 +35,7 @@
 #define PIN_Y_DIR 6     // BR
 #define PIN_A_DIR 13    // FR
 #define PIN_X_DIR 5     // BL
-#define PIN_Z_DIR 7     // BR
+#define PIN_Z_DIR 7     // FL
 #define PIN_Y_STP 3
 // #define PIN_A_STP 12
 #define PIN_X_STP 2
@@ -112,10 +112,6 @@ setup() {
 	pinMode(PIN_COOLANT_ENABLE, INPUT);
 	pinMode(PIN_SCL, INPUT);
 	pinMode(PIN_SDA, INPUT);
-
-	digitalWrite(PIN_SDA, HIGH);
-	digitalWrite(PIN_SDA, LOW);
-	digitalWrite(PIN_SDA, HIGH);
 
 	pixels.begin();
 	set_lights(1, 1, 1);
@@ -241,61 +237,6 @@ loop() {
 
 		Command_sendData(&packet);
 	}
-
-	// if (state == 0) {
-	// 	start_time = millis();
-	// 	state      = 1;
-	// } else if (state == 1) {
-	// 	if (millis() - start_time > 1000) {
-	// 		state      = 2;
-	// 		start_time = millis();
-
-	// 		_velocity_fl = 0;
-	// 		_velocity_fr = 0;
-	// 		_velocity_bl = 0;
-	// 		_velocity_br = 0;
-	// 	}
-	// } else if (state == 2) {
-	// 	if (millis() - start_time > 1000) {
-	// 		state      = 3;
-	// 		start_time = millis();
-
-	// 		_velocity_fl = 50;
-	// 		_velocity_fr = 0;
-	// 		_velocity_bl = 0;
-	// 		_velocity_br = 0;
-	// 	}
-	// } else if (state == 3) {
-	// 	if (millis() - start_time > 1000) {
-	// 		state      = 1;
-	// 		start_time = millis();
-
-	// 		_velocity_fl = -50;
-	// 		_velocity_fr = 0;
-	// 		_velocity_bl = 0;
-	// 		_velocity_br = 0;
-	// 	}
-	// } else if (state == 4) {
-	// 	if (millis() - start_time > 3000) {
-	// 		state      = 5;
-	// 		start_time = millis();
-
-	// 		_velocity_fl = -500;
-	// 		_velocity_fr = 0;
-	// 		_velocity_bl = 0;
-	// 		_velocity_br = 0;
-	// 	}
-	// } else if (state == 5) {
-	// 	if (millis() - start_time > 3000) {
-	// 		state      = 1;
-	// 		start_time = millis();
-
-	// 		_velocity_fl = -100;
-	// 		_velocity_fr = 0;
-	// 		_velocity_bl = 0;
-	// 		_velocity_br = 0;
-	// 	}
-	// }
 
 	task_motor_control();
 }
