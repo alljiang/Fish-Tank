@@ -87,17 +87,32 @@ def send_light(r, g, b):
 while True:
     print("\nEnter a command")
     command = input("Command: ")
-    if command == "0":
-        send_velocity(0, 0, 0)
-    elif command == "1":
+    if command == "w":
         send_velocity(50, 0, 0)
-    elif command == "2":
+    elif command == "s":
         send_velocity(-50, 0, 0)
-    elif command == "3":
-        send_light(0, 0, 0)
-        send_velocity(0, 50, 0)
-    elif command == "4":
-        send_light(1, 1, 1)
+    elif command == "a":
         send_velocity(0, -50, 0)
+    elif command == "d":
+        send_velocity(0, 50, 0)
+    elif command == "q":
+        send_velocity(0, 0, -50)
+    elif command == "e":
+        send_velocity(0, 0, 50)
     else:
-        print("Invalid command")
+        send_velocity(0, 0, 0)
+
+    # if command == "0":
+    #     send_velocity(0, 0, 0)
+    # elif command == "1":
+    #     send_velocity(50, 0, 0)
+    # elif command == "2":
+    #     send_velocity(-50, 0, 0)
+    # elif command == "3":
+    #     send_light(0, 0, 0)
+    #     send_velocity(0, 50, 0)
+    # elif command == "4":
+    #     send_light(1, 1, 1)
+    #     send_velocity(0, -50, 0)
+    # else:
+    #     print("Invalid command")
