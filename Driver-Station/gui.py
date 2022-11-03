@@ -49,10 +49,8 @@ class Ui(object):
         self.timer1.timeout.connect(self.periodic_connection_status_task)
         self.timer1.start()
 
-        self.timer2 = QTimer()
-        self.timer2.setInterval(10)
-        self.timer2.timeout.connect(self.periodic_camera_task)
-        self.timer2.start()
+        thread_camera = Thread(target=self.camera_task)
+        thread_camera.start()
 
     def exitHandler(self, event):
         self.window_closed = True
@@ -115,23 +113,16 @@ class Ui(object):
             self.timer1.stop()
             return
 
-    def periodic_camera_task(self):
-        # return if self.mainWindow is closed
-        if self.window_closed:
-            self.timer2.stop()
-            return
-        
-        thread = Thread(target=self.update_camera_view)
-        thread.start()
-        thread.join()
-
 # ==================================================
 
-    def update_camera_view(self):
-        # get image from camera server
-        image = camera_server.get_image_pixmap()
+    def camera_task(self):
+        while True:
+            # get image from camera server
+            image = camera_server.get_image_pixmap()
 
-        self.mainWindow.view_camera.setPixmap(image)
+            self.mainWindow.view_camera.setPixmap(image)
+
+            time.sleep(0.05)
 
 communication = Communication()
 acked = communication.send_and_receive_ack(TCP_DISABLE)
