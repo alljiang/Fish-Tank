@@ -28,7 +28,7 @@ class Server:
 
             data = data.split(";")
             data = list(filter(None, data))
-            print(data + "\t" + data[0])
+            print(str(data) + "\t" + str(data[0]))
             data = data[0]
 
             conn.send("ACK".encode())
