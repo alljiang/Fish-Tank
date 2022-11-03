@@ -9,6 +9,9 @@ fish_speed = 500
 override_speed = 1000
 
 def command_receive_handler(command):
+    global fish_speed
+    global override_speed
+    
     if command == TCP_FORWARD:
         controller.send_velocity(override_speed, 0, 0)
     elif command == TCP_BACKWARD:

@@ -61,7 +61,6 @@ class Controller:
 
             if rx_buffer[1] == 0x01 and \
                 rx_buffer[2] == 0:
-                print("Received ACK")
                 return 0
             else:
                 print("\nERROR: Receieved invalid acknowledgement")
