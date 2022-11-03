@@ -26,10 +26,10 @@
 #include "command.h"
 
 // Motor Driver Properties
-#define MAX_PPS 1500
+#define MAX_PPS 6000
 #define PULSE_WIDTH_US (1000000 / MAX_PPS / 2)
-// #define PULSE_WIDTH_COMPENSATION_OFFSET_US 40
-#define PULSE_WIDTH_COMPENSATION_OFFSET_US 0
+#define PULSE_WIDTH_COMPENSATION_OFFSET_US 40
+// #define PULSE_WIDTH_COMPENSATION_OFFSET_US 0
 
 // A4988 Shield
 #define PIN_A4988_EN 8  // enable pin across all drivers
