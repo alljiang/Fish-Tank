@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>983</width>
-    <height>673</height>
+    <width>1102</width>
+    <height>705</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,120 +19,126 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>641</width>
-      <height>621</height>
+      <width>681</width>
+      <height>681</height>
      </rect>
     </property>
    </widget>
-   <widget class="QPushButton" name="btn_disable">
+   <widget class="QGroupBox" name="groupBox_2">
     <property name="geometry">
      <rect>
-      <x>680</x>
-      <y>40</y>
-      <width>131</width>
-      <height>71</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>10</pointsize>
-      <weight>75</weight>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string>Disable Fish
-Controls</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="btn_enable">
-    <property name="geometry">
-     <rect>
-      <x>820</x>
-      <y>40</y>
-      <width>131</width>
-      <height>71</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>10</pointsize>
-      <weight>75</weight>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string>Enable Fish
-Controls</string>
-    </property>
-   </widget>
-   <widget class="QGroupBox" name="groupBox">
-    <property name="geometry">
-     <rect>
-      <x>690</x>
-      <y>530</y>
-      <width>231</width>
-      <height>81</height>
+      <x>700</x>
+      <y>10</y>
+      <width>391</width>
+      <height>681</height>
      </rect>
     </property>
     <property name="title">
-     <string>Config</string>
+     <string/>
     </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-    <widget class="QCheckBox" name="cb_keyboard">
+    <widget class="QGroupBox" name="groupBox">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>590</y>
+       <width>341</width>
+       <height>81</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>Config</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <widget class="QCheckBox" name="cb_keyboard">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>20</y>
+        <width>311</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Control with keyboard while disabled</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QPushButton" name="btn_disable">
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>20</y>
-       <width>211</width>
-       <height>16</height>
+       <y>40</y>
+       <width>181</width>
+       <height>71</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>MS Shell Dlg 2</family>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+       <kerning>true</kerning>
+      </font>
+     </property>
+     <property name="text">
+      <string>Disable Fish
+Controls</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="btn_enable">
+     <property name="geometry">
+      <rect>
+       <x>200</x>
+       <y>40</y>
+       <width>181</width>
+       <height>71</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>MS Shell Dlg 2</family>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+       <kerning>true</kerning>
+      </font>
+     </property>
+     <property name="text">
+      <string>Enable Fish
+Controls</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_2">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>0</y>
+       <width>101</width>
+       <height>41</height>
       </rect>
      </property>
      <property name="text">
-      <string>Control with keyboard while disabled</string>
+      <string>Connection Status:</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_connection_status">
+     <property name="geometry">
+      <rect>
+       <x>130</x>
+       <y>-1</y>
+       <width>91</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Not Connected</string>
      </property>
     </widget>
    </widget>
-   <widget class="QLabel" name="label_2">
-    <property name="geometry">
-     <rect>
-      <x>680</x>
-      <y>10</y>
-      <width>101</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Connection Status:</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_connection_status">
-    <property name="geometry">
-     <rect>
-      <x>780</x>
-      <y>10</y>
-      <width>91</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Not Connected</string>
-    </property>
-   </widget>
   </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>983</width>
-     <height>21</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
  <connections/>
