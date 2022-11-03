@@ -33,6 +33,7 @@ class Ui(object):
         self.mainWindow.closeEvent = self.exitHandler
         self.mainWindow.btn_enable.clicked.connect(self.button_enable_handler)
         self.mainWindow.btn_disable.clicked.connect(self.button_disable_handler)
+        # self.mainWindow.
 
     def post_initialization_tasks(self):
         self.window_closed = False
@@ -82,6 +83,9 @@ class Ui(object):
 
     def button_disable_handler(self):
         print("button_disable_handler")
+
+    def keyPressEvent(self, event):
+        print(event.key())
 
 # ==================================================
 

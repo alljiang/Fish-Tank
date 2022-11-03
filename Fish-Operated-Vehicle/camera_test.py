@@ -28,4 +28,5 @@ while(True):
         time.sleep(1)
 
         # reset sender
+        sender.close()
         sender = create_sender()
