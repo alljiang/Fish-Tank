@@ -5,7 +5,7 @@ class Server:
     def __init__(self):
         self.server_start()
 
-    def server_start():
+    def server_start(self):
         # get the hostname
         host = socket.gethostname()
         port = 5123  # initiate port no above 1024
@@ -18,7 +18,7 @@ class Server:
         server_socket.listen(1)
         conn, address = server_socket.accept()  # accept new connection
         print("Connection from: " + str(address))
-        
+
         while True:
             # receive data stream. it won't accept data packet greater than 1024 bytes
             data = conn.recv(1024).decode()
