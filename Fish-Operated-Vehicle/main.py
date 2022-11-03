@@ -11,7 +11,7 @@ override_speed = 1000
 def command_receive_handler(command):
     global fish_speed
     global override_speed
-    
+
     if command == TCP_FORWARD:
         controller.send_velocity(override_speed, 0, 0)
     elif command == TCP_BACKWARD:
@@ -28,7 +28,6 @@ def command_receive_handler(command):
         controller.send_velocity(0, 0, 0)
     elif command == TCP_ENABLE:
         controller.send_velocity(0, 0, 0)
-        print("ENABLE")
     elif command.startswith(TCP_SET_FISH_SPEED_HEADER):
         fish_speed = int(command[len(TCP_SET_FISH_SPEED_HEADER):])
         print("Fish speed set to " + str(fish_speed))
@@ -38,11 +37,10 @@ def command_receive_handler(command):
     else:
         print("Unknown command: " + command)
 
-
 controller = Controller()
 
-server = Server(command_receive_handler)
 camera_client = CameraClient()
+server = Server(command_receive_handler, camera_client.tcp_connection_receive_handler)
 
 thread_server = Thread(target=server.server_start)
 thread_camera = Thread(target=camera_client.sender_task)

@@ -11,13 +11,18 @@ class CameraClient:
     def __init__(self):
         self.cap = cv2.VideoCapture(0)
         self.rpi_name = socket.gethostname()
+        self.ip = ''
 
     def __del__(self):
         self.cap.release()
         self.sender.close()
 
+    def tcp_connection_receive_handler(self, ip):
+        print("Camera " + ip)
+        self.ip = ip
+
     def create_sender(self):
-        sender = imagezmq.ImageSender(connect_to='tcp://Allen-PC:5555')
+        sender = imagezmq.ImageSender(connect_to='tcp://' + self.ip + ':5555')
         sender.zmq_socket.setsockopt(zmq.LINGER, 0)  # prevents ZMQ hang on exit
         sender.zmq_socket.setsockopt(zmq.RCVTIMEO, 1000)
         sender.zmq_socket.setsockopt(zmq.SNDTIMEO, 1000)
@@ -35,4 +40,5 @@ class CameraClient:
 
                 # reset sender
                 self.sender.close()
+                print("Attempting to reconnect to server...")
                 self.sender = self.create_sender()

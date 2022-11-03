@@ -4,6 +4,7 @@ from PyQt6.QtCore import QTimer, Qt
 import numpy as np
 import time, threading
 import cv2
+import socket
 from camera_server import CameraServer
 from communication import Communication
 from PyQt6.QtGui import QImage, QPixmap

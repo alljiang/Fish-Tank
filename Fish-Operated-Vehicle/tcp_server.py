@@ -2,8 +2,9 @@ import socket
 
 class Server:
 
-    def __init__(self, command_receive_handler):
+    def __init__(self, command_receive_handler, connected_handler):
         self.command_receive_handler = command_receive_handler
+        self.connected_handler = connected_handler
         self.port = 5000
 
     def server_connect(self):
@@ -15,7 +16,7 @@ class Server:
         self.server_socket.listen(1)
         print("Waiting for TCP connection...")
         self.conn, address = self.server_socket.accept()  # accept new connection
-        print("Connection from: " + str(address))
+        self.connected_handler(address[0])
 
     def server_start(self):
         self.server_connect()
