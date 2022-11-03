@@ -26,9 +26,10 @@ class Communication():
 
     def send_and_receive_ack(self, string):
         self.send(string)
-
+        
         received = self.receive()
         if received == "ACK":
             return True
         else:
+            print("NOT ACKED")
             return False

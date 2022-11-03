@@ -13,7 +13,7 @@ class Server:
 
         # configure how many client the server can listen simultaneously
         self.server_socket.listen(1)
-        print("Waiting for connection...")
+        print("Waiting for TCP connection...")
         self.conn, address = self.server_socket.accept()  # accept new connection
         print("Connection from: " + str(address))
 
@@ -35,7 +35,6 @@ class Server:
 
             data = data.split(";")
             data = list(filter(None, data))
-            print(str(data) + "\t" + str(data[0]))
             data = data[0]
 
             self.conn.send("ACK".encode())

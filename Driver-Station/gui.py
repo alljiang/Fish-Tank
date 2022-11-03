@@ -33,8 +33,16 @@ class Ui(object):
     # custom UI configurations
     def customConfiguration(self):
         self.mainWindow.closeEvent = self.exitHandler
+        self.mainWindow.btn_fish_speed.clicked.connect(self.button_set_fish_speed_handler)
+        self.mainWindow.btn_override_speed.clicked.connect(self.button_set_override_speed_handler)
+        self.mainWindow.slider_fish_speed.valueChanged.connect(self.slider_fish_speed_handler)
+        self.mainWindow.slider_override_speed.valueChanged.connect(self.slider_override_speed_handler)
         self.mainWindow.btn_enable.clicked.connect(self.button_enable_handler)
         self.mainWindow.btn_disable.clicked.connect(self.button_disable_handler)
+
+        self.mainWindow.slider_fish_speed.setValue(FISH_SPEED_DEFAULT)
+        self.mainWindow.slider_override_speed.setValue(OVERRIDE_SPEED_DEFAULT)
+        
         self.mainWindow.cb_keyboard.keyPressEvent = self.key_event_handler
 
     def post_initialization_tasks(self):
@@ -78,30 +86,47 @@ class Ui(object):
 
 # ------------- GUI EVENT HANDLERS -----------------
 
+    def button_set_fish_speed_handler(self):
+        percentage = self.mainWindow.slider_fish_speed.value()
+        communication.send_and_receive_ack(TCP_SET_FISH_SPEED_HEADER + str(percentage) + "0")
+
+    def button_set_override_speed_handler(self):
+        percentage = self.mainWindow.slider_override_speed.value()
+        communication.send_and_receive_ack(TCP_SET_OVERRIDE_SPEED_HEADER + str(percentage) + "0")
+
+    def slider_fish_speed_handler(self):
+        percentage = self.mainWindow.slider_fish_speed.value()
+        self.mainWindow.label_fish_speed.setText(str(percentage) + "%")
+
+    def slider_override_speed_handler(self):
+        percentage = self.mainWindow.slider_override_speed.value()
+        self.mainWindow.label_override_speed.setText(str(percentage) + "%")
+
     def button_enable_handler(self):
-        print("button_enable_handler")
+        communication.send_and_receive_ack(TCP_ENABLE)
 
     def button_disable_handler(self):
-        print("button_disable_handler")
+        communication.send_and_receive_ack(TCP_DISABLE)
 
     def key_event_handler(self, event):
         to_send = self.mainWindow.cb_keyboard.isChecked()
         
         if to_send:
             if event.key() == Qt.Key.Key_W:
-                print("W")
+                communication.send_and_receive_ack(TCP_FORWARD)
+                print("Forward")
             elif event.key() == Qt.Key.Key_A:
-                print("A")
+                communication.send_and_receive_ack(TCP_LEFT)
             elif event.key() == Qt.Key.Key_S:
-                print("S")
+                communication.send_and_receive_ack(TCP_BACKWARD)
             elif event.key() == Qt.Key.Key_D:
-                print("D")
+                communication.send_and_receive_ack(TCP_RIGHT)
             elif event.key() == Qt.Key.Key_Q:
-                print("Q")
+                communication.send_and_receive_ack(TCP_ROTATE_CCW)
             elif event.key() == Qt.Key.Key_E:
-                print("E")
+                communication.send_and_receive_ack(TCP_ROTATE_CW)
             elif event.key() == Qt.Key.Key_Space:
-                print("Space")
+                communication.send_and_receive_ack(TCP_DISABLE)
 
 # ==================================================
 
@@ -117,6 +142,9 @@ class Ui(object):
 
     def camera_task(self):
         while True:
+            if self.window_closed:
+                return
+
             # get image from camera server
             image = camera_server.get_image_pixmap()
 
@@ -127,7 +155,6 @@ class Ui(object):
 communication = Communication()
 acked = communication.send_and_receive_ack(TCP_DISABLE)
 if not acked:
-    print("NOT ACKED")
     exit()
 
 camera_server = CameraServer()

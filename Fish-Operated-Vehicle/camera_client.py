@@ -31,7 +31,6 @@ class CameraClient:
                 ret, frame = self.cap.read()
                 self.sender.send_image(self.rpi_name, frame)
             except:
-                print("No Camera Server")
                 time.sleep(1)
 
                 # reset sender
