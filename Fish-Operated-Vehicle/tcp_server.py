@@ -4,7 +4,6 @@ class Server:
 
     def __init__(self, command_receive_handler):
         self.command_receive_handler = command_receive_handler
-        self.server_start()
 
     def server_start(self):
         # get the hostname
