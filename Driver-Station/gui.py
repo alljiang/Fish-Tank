@@ -3,6 +3,10 @@ from PyQt6 import QtCore, QtGui, QtWidgets, uic
 from PyQt6.QtCore import QTimer
 import numpy as np
 import time, threading
+import cv2
+from camera_server import CameraServer
+from PyQt6.QtGui import QImage, QPixmap
+from threading import *
 
 class Ui(object):
 
@@ -41,6 +45,11 @@ class Ui(object):
         self.timer1.setInterval(100)
         self.timer1.timeout.connect(self.periodic_connection_status_task)
         self.timer1.start()
+
+        self.timer2 = QTimer()
+        self.timer2.setInterval(10)
+        self.timer2.timeout.connect(self.periodic_camera_task)
+        self.timer2.start()
 
     def exitHandler(self, event):
         self.window_closed = True
@@ -84,5 +93,24 @@ class Ui(object):
             self.timer1.stop()
             return
 
+    def periodic_camera_task(self):
+        # return if self.mainWindow is closed
+        if self.window_closed:
+            self.timer2.stop()
+            return
+        
+        thread = Thread(target=self.update_camera_view)
+        thread.start()
+        thread.join()
+
+# ==================================================
+
+    def update_camera_view(self):
+        # get image from camera server
+        image = camera_server.get_image_pixmap()
+
+        self.mainWindow.view_camera.setPixmap(image)
+
 # communication = Communication()
+camera_server = CameraServer()
 Ui()
