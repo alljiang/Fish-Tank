@@ -7,15 +7,16 @@ class Server:
 
     def server_start(self):
         # get the hostname
-        host = socket.gethostname()
-        port = 5123  # initiate port no above 1024
+        host = "localhost"
+        port = 5000  # initiate port no above 1024
 
-        server_socket = socket.socket()  # get instance
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # get instance
         # look closely. The bind() function takes tuple as argument
         server_socket.bind((host, port))  # bind host address and port together
 
         # configure how many client the server can listen simultaneously
         server_socket.listen(1)
+        print("waiting for connection")
         conn, address = server_socket.accept()  # accept new connection
         print("Connection from: " + str(address))
 
