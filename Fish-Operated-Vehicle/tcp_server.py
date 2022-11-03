@@ -11,7 +11,7 @@ class Server:
         port = 5000  # initiate port no above 1024
 
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # get instance
-        # look closely. The bind() function takes tuple as argument
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind(('', port))  # bind host address and port together
 
         # configure how many client the server can listen simultaneously
