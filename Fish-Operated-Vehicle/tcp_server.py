@@ -2,7 +2,8 @@ import socket
 
 class Server:
 
-    def __init__(self):
+    def __init__(self, command_receive_handler):
+        self.command_receive_handler = command_receive_handler
         self.server_start()
 
     def server_start(self):
@@ -16,7 +17,7 @@ class Server:
 
         # configure how many client the server can listen simultaneously
         server_socket.listen(1)
-        print("waiting for connection")
+        print("Waiting for connection...")
         conn, address = server_socket.accept()  # accept new connection
         print("Connection from: " + str(address))
 
@@ -24,10 +25,15 @@ class Server:
             # receive data stream. it won't accept data packet greater than 1024 bytes
             data = conn.recv(1024).decode()
             if not data:
-                # if data is not received break
                 break
-            print("from connected user: " + str(data))
-            data = input(' -> ')
-            conn.send(data.encode())  # send data to the client
+
+            data = data.split(";")
+            data = list(filter(None, data))
+            print(data + "\t" + data[0])
+            data = data[0]
+
+            conn.send("ACK".encode())
+
+            self.command_receive_handler(data)
 
         conn.close()  # close the connection

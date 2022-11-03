@@ -1,6 +1,7 @@
 
 from tcp_server import Server
 
-server = Server()
+def command_receive_handler(command):
+    print(command)
 
-server.server_program()
+server = Server(command_receive_handler)

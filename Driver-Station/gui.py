@@ -5,8 +5,10 @@ import numpy as np
 import time, threading
 import cv2
 from camera_server import CameraServer
+from communication import Communication
 from PyQt6.QtGui import QImage, QPixmap
 from threading import *
+from config import *
 
 class Ui(object):
 
@@ -131,6 +133,11 @@ class Ui(object):
 
         self.mainWindow.view_camera.setPixmap(image)
 
-# communication = Communication()
+communication = Communication()
+acked = communication.send_and_receive_ack(TCP_DISABLE)
+if not acked:
+    print("NOT ACKED")
+    exit()
+
 camera_server = CameraServer()
 Ui()

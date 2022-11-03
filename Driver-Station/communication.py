@@ -1,25 +1,34 @@
 import socket
+from config import *
 
 class Communication():
 
-    def client_program():
-        host = "10.42.0.1"
-        port = 5000  # socket server port number
+    def __init__(self):
+        self.connect()
 
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # instantiate
-        client_socket.connect((host, port))  # connect to the server
+    def __del__(self):
+        self.client_socket.close()
 
-        message = input(" -> ")  # take input
+    def connect(self):
+        self.host = FISH_TANK_IP
+        self.port = FISH_TANK_PORT  # socket server port number
 
-        while message.lower().strip() != 'bye':
-            client_socket.send(message.encode())  # send message
-            data = client_socket.recv(1024).decode()  # receive response
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # instantiate
+        self.client_socket.connect((self.host, self.port))  # connect to the server
 
-            print('Received from server: ' + data)  # show in terminal
+    def send(self, string):
+        string += TCP_DELIMITER
+        self.client_socket.send(string.encode())  # send message
+        
+    def receive(self):
+        self.client_socket.settimeout(1)
+        return self.client_socket.recv(1024).decode()
 
-            message = input(" -> ")  # again take input
+    def send_and_receive_ack(self, string):
+        self.send(string)
 
-        client_socket.close()  # close the connection
-
-
-Communication.client_program()
+        received = self.receive()
+        if received == "ACK":
+            return True
+        else:
+            return False
