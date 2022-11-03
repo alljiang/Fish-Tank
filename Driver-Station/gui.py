@@ -1,6 +1,6 @@
 
 from PyQt6 import QtCore, QtGui, QtWidgets, uic
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, Qt
 import numpy as np
 import time, threading
 import cv2
@@ -33,7 +33,7 @@ class Ui(object):
         self.mainWindow.closeEvent = self.exitHandler
         self.mainWindow.btn_enable.clicked.connect(self.button_enable_handler)
         self.mainWindow.btn_disable.clicked.connect(self.button_disable_handler)
-        # self.mainWindow.
+        self.mainWindow.cb_keyboard.keyPressEvent = self.key_event_handler
 
     def post_initialization_tasks(self):
         self.window_closed = False
@@ -84,8 +84,24 @@ class Ui(object):
     def button_disable_handler(self):
         print("button_disable_handler")
 
-    def keyPressEvent(self, event):
-        print(event.key())
+    def key_event_handler(self, event):
+        to_send = self.mainWindow.cb_keyboard.isChecked()
+        
+        if to_send:
+            if event.key() == Qt.Key.Key_W:
+                print("W")
+            elif event.key() == Qt.Key.Key_A:
+                print("A")
+            elif event.key() == Qt.Key.Key_S:
+                print("S")
+            elif event.key() == Qt.Key.Key_D:
+                print("D")
+            elif event.key() == Qt.Key.Key_Q:
+                print("Q")
+            elif event.key() == Qt.Key.Key_E:
+                print("E")
+            elif event.key() == Qt.Key.Key_Space:
+                print("Space")
 
 # ==================================================
 
