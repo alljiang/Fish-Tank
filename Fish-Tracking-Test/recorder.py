@@ -15,6 +15,7 @@ fourcc = cv2.VideoWriter_fourcc(*'XVID')
 out = cv2.VideoWriter('output.avi',fourcc, 30.0, (1920, 1080))
 
 start_time = time.time()
+print("Recording started")
 while( int(time.time() - start_time) < CAPTURE_DURATION ):
     ret, frame = cap.read()
     if ret == True:
@@ -27,6 +28,7 @@ while( int(time.time() - start_time) < CAPTURE_DURATION ):
         break
 
 # Release everything if job is finished
+print("Recording finished")
 cap.release()
 out.release()
 cv2.destroyAllWindows()
