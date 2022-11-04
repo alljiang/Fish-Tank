@@ -5,6 +5,10 @@ FISH_TANK_PORT = 5000
 FISH_SPEED_DEFAULT = 50
 OVERRIDE_SPEED_DEFAULT = 100
 
+LED_R_DEFAULT = 100
+LED_G_DEFAULT = 100
+LED_B_DEFAULT = 100
+
 # TCP command
 TCP_DELIMITER = ";"
 
@@ -21,3 +25,5 @@ TCP_ENABLE = "ENABLE"
 TCP_SET_FISH_SPEED_HEADER = "FISH" # followed by a number
 TCP_SET_OVERRIDE_SPEED_HEADER = "OVERRIDE" # followed by a number
 
+TCP_LED_RGB = "RGB" # followed by 3 numbers [0, 255] delimited by 2 commas
+TCP_LED_PARTY = "PARTY"

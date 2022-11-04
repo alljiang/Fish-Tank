@@ -34,6 +34,11 @@ def command_receive_handler(command):
     elif command.startswith(TCP_SET_OVERRIDE_SPEED_HEADER):
         override_speed = int(command[len(TCP_SET_OVERRIDE_SPEED_HEADER):])
         print("Override speed set to " + str(override_speed))
+    elif command.startswith(TCP_LED_RGB):
+        rgb = command[len(TCP_LED_RGB):].split(",")
+        controller.send_light(int(rgb[0]), int(rgb[1]), int(rgb[2]))
+    elif command == TCP_LED_PARTY:
+        print("party mode")
     else:
         print("Unknown command: " + command)
 

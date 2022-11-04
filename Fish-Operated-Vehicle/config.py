@@ -24,3 +24,6 @@ TCP_ENABLE = "ENABLE"
 
 TCP_SET_FISH_SPEED_HEADER = "FISH" # followed by a number
 TCP_SET_OVERRIDE_SPEED_HEADER = "OVERRIDE" # followed by a number
+
+TCP_LED_RGB = "RGB" # followed by 3 numbers [0, 255] delimited by 2 commas
+TCP_LED_PARTY = "PARTY"
