@@ -133,17 +133,17 @@ class Ui(object):
 
     def slider_led_r_handler(self):
         value = self.mainWindow.slider_led_r.value()
-        value = int(round(value / 255.0))
+        value = int(round(value / 255.0 * 100))
         self.mainWindow.label_led_r.setText(str(value))
 
     def slider_led_g_handler(self):
         value = self.mainWindow.slider_led_g.value()
-        value = int(round(value / 255.0))
+        value = int(round(value / 255.0 * 100))
         self.mainWindow.label_led_g.setText(str(value))
     
     def slider_led_b_handler(self):
         value = self.mainWindow.slider_led_b.value()
-        value = int(round(value / 255.0))
+        value = int(round(value / 255.0 * 100))
         self.mainWindow.label_led_b.setText(str(value))
 
     def key_event_handler(self, event):

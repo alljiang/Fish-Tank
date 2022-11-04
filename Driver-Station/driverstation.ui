@@ -292,7 +292,7 @@ Controls</string>
        </rect>
       </property>
       <property name="maximum">
-       <number>100</number>
+       <number>255</number>
       </property>
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
@@ -314,7 +314,7 @@ Controls</string>
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
      </widget>
-     <widget class="QPushButton" name="btn_override_speed_2">
+     <widget class="QPushButton" name="btn_led_on">
       <property name="geometry">
        <rect>
         <x>120</x>
@@ -352,7 +352,7 @@ Controls</string>
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
      </widget>
-     <widget class="QPushButton" name="btn_override_speed_3">
+     <widget class="QPushButton" name="btn_led_off">
       <property name="geometry">
        <rect>
         <x>10</x>
@@ -374,7 +374,7 @@ Controls</string>
        <string>Lights Off</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="btn_override_speed_4">
+     <widget class="QPushButton" name="btn_led_party">
       <property name="geometry">
        <rect>
         <x>230</x>
@@ -422,7 +422,7 @@ Controls</string>
        </rect>
       </property>
       <property name="maximum">
-       <number>100</number>
+       <number>255</number>
       </property>
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
@@ -470,7 +470,7 @@ Controls</string>
        </rect>
       </property>
       <property name="maximum">
-       <number>100</number>
+       <number>255</number>
       </property>
       <property name="orientation">
        <enum>Qt::Horizontal</enum>

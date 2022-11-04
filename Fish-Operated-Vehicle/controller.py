@@ -98,3 +98,9 @@ class Controller:
         self.communication.send_packet(self.serial_port, CMD_HEADER_SET_LIGHT, data)
         rv = self.expect_ack()
         return rv
+
+    def send_light_party(self):
+        data = bytearray()
+        self.communication.send_packet(self.serial_port, CMD_HEADER_SET_PARTY_MODE, data)
+        rv = self.expect_ack()
+        return rv

@@ -72,7 +72,11 @@ int16_t _velocity_br = 0;
 uint32_t _last_pulse_us[4] = {0, 0, 0, 0};
 bool _pulse_high[4]        = {false, false, false, false};
 
+Packet packet;
 uint8_t _tx_data[32];
+
+bool party_led_mode;
+uint16_t _wheel_pos = 0;
 
 void
 set_lights(uint8_t r, uint8_t g, uint8_t b) {
@@ -82,6 +86,38 @@ set_lights(uint8_t r, uint8_t g, uint8_t b) {
 		pixels.setPixelColor(i, pixels.Color(r, g, b));
 		pixels.show();
 	}
+}
+
+uint32_t
+Wheel(byte WheelPos) {
+	WheelPos = 255 - WheelPos;
+	if (WheelPos < 85) {
+		return pixels.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+	}
+	if (WheelPos < 170) {
+		WheelPos -= 85;
+		return pixels.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+	}
+	WheelPos -= 170;
+	return pixels.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+}
+
+int pixelInterval = 50;  // Pixel Interval (ms)
+int pixelCycle    = 0;   // Pattern Pixel Cycle
+
+// Rainbow cycle along whole strip. Pass delay time (in ms) between frames.
+void
+rainbow(uint8_t wait) {
+	if (pixelInterval != wait)
+		pixelInterval = wait;
+	for (uint16_t i = 0; i < NUMPIXELS; i++) {
+		pixels.setPixelColor(
+		    i, Wheel((i + pixelCycle) & 255));  //  Update delay time
+	}
+	pixels.show();  //  Update strip to match
+	pixelCycle++;   //  Advance current cycle
+	if (pixelCycle >= 256)
+		pixelCycle = 0;  //  Loop the cycle back to the begining
 }
 
 void
@@ -116,6 +152,7 @@ setup() {
 
 	pixels.begin();
 	set_lights(1, 1, 1);
+	party_led_mode = false;
 
 	delay(50);
 
@@ -186,11 +223,6 @@ task_motor_control() {
 	_pulse_high[3] = digital_output[3];
 }
 
-int state          = 0;
-int64_t start_time = 0;
-
-Packet packet;
-
 void
 loop() {
 	int rv;
@@ -227,7 +259,11 @@ loop() {
 		} else if (packet.header == CMD_HEADER_SET_LIGHT &&
 		           packet.length == CMD_LENGTH_SET_LIGHT) {
 			set_lights(packet.data[0], packet.data[1], packet.data[2]);
-			send_ack = true;
+			send_ack       = true;
+			party_led_mode = false;
+		} else if (packet.header == CMD_HEADER_SET_LIGHT_PARTY &&
+		           packet.length == CMD_LENGTH_SET_LIGHT_PARTY) {
+			party_led_mode = true;
 		}
 	}
 
@@ -240,4 +276,14 @@ loop() {
 	}
 
 	task_motor_control();
+
+	int currentMillis        = millis();
+	static int pixelPrevious = 0;
+	if (currentMillis - pixelPrevious >= pixelInterval) {
+		pixelPrevious = currentMillis;
+
+		if (party_led_mode) {
+			rainbow(5);
+		}
+	}
 }

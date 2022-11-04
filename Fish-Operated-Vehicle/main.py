@@ -38,7 +38,7 @@ def command_receive_handler(command):
         rgb = command[len(TCP_LED_RGB):].split(",")
         controller.send_light(int(rgb[0]), int(rgb[1]), int(rgb[2]))
     elif command == TCP_LED_PARTY:
-        print("party mode")
+        controller.send_light_party()
     else:
         print("Unknown command: " + command)
 
