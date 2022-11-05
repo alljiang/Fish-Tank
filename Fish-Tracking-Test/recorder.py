@@ -13,7 +13,7 @@ cap.set(cv2.CAP_PROP_FPS, 30)
 
 # Define the codec and create VideoWriter object
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-out = cv2.VideoWriter('output.mp4',fourcc, 30.0, (1920, 1080))
+out = cv2.VideoWriter('output.mp4',fourcc, 30.0, (1280,720))
 
 frame_count = 0
 start_time = time.time()
