@@ -70,13 +70,13 @@ class Tracking:
 
     def add_visuals(self, frame, contour, center, direction):
         # add crosshair in the middle of ROI
-        middle_1 = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] // 2
-        middle_0 = config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3] // 2
+        middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] // 2
+        middle_y = config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3] // 2
 
-        cv2.line(frame, (middle_1 + config.CROSSHAIR_LENGTH, middle_0), 
-                        (middle_1 - config.CROSSHAIR_LENGTH, middle_0), (255, 255, 255), 1)
-        cv2.line(frame, (middle_1, middle_0 + config.CROSSHAIR_LENGTH),
-                        (middle_1, middle_0 - config.CROSSHAIR_LENGTH), (255, 255, 255), 1)
+        cv2.line(frame, (middle_x + config.CROSSHAIR_LENGTH, middle_y), 
+                        (middle_x - config.CROSSHAIR_LENGTH, middle_y), (255, 255, 255), 1)
+        cv2.line(frame, (middle_x, middle_y + config.CROSSHAIR_LENGTH),
+                        (middle_x, middle_y - config.CROSSHAIR_LENGTH), (255, 255, 255), 1)
       
         # draw ROI
         cv2.rectangle(frame, (config.ROI_PARAMETERS[0], config.ROI_PARAMETERS[1]),
@@ -89,14 +89,18 @@ class Tracking:
 
         # draw arrow
         start_point = (int(center[0]), int(center[1]))
-        end_point = (int(center[0] + 100 * np.cos(direction * np.pi / 180)), int(center[1] + 100 * np.sin(direction * np.pi / 180)))
-        cv2.arrowedLine(frame, start_point, end_point, (0, 255, 0), 1)
+        end_point = (int(center[0] + config.ARROW_LENGTH * np.cos(direction * np.pi / 180)), int(center[1] + config.ARROW_LENGTH * np.sin(direction * np.pi / 180)))
+        cv2.arrowedLine(frame, start_point, end_point, (0, 255, 0), 1, tipLength=0.5)
+
+        # draw control threshold
+        control_threshold_top_left = (middle_x - config.CONTROL_THRESHOLD_DISTANCE // 2, middle_y + config.CONTROL_THRESHOLD_DISTANCE // 2)
+        control_threshold_bottom_right = (middle_x + config.CONTROL_THRESHOLD_DISTANCE // 2, middle_y - config.CONTROL_THRESHOLD_DISTANCE // 2)
+        cv2.rectangle(frame, control_threshold_top_left, control_threshold_bottom_right, (255, 0, 0), 1)
 
     def calculate_direction(self, contour, frame):
         if contour is not None:
             ellipse = cv2.fitEllipseDirect(contour)
             (xc, yc), (d1, d2), angle = ellipse
-            cv2.ellipse(frame, ellipse, (0, 255, 0), 1)
             angle = ellipse[2] - 90
             
             ellipse_mask = np.zeros(frame.shape, dtype=np.uint8)
@@ -146,6 +150,15 @@ class Tracking:
         r = cv2.selectROI(frame)
         print(r)
 
+    def is_in_idle_threshold(self, point):
+        middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] // 2
+        middle_y = config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3] // 2
+
+        if point[0] > middle_x - config.CONTROL_THRESHOLD_DISTANCE // 2 and point[0] < middle_x + config.CONTROL_THRESHOLD_DISTANCE // 2:
+            if point[1] < middle_y + config.CONTROL_THRESHOLD_DISTANCE // 2 and point[1] > middle_y - config.CONTROL_THRESHOLD_DISTANCE // 2:
+                return True
+
+        return False
 
 # Read video
 tracker = Tracking()
@@ -165,6 +178,7 @@ for i in range(0, 2000):
         contour = tracker.find_contour(frame)
         center, angle = tracker.calculate_direction(contour, frame)
         tracker.add_visuals(frame, contour, center, angle)
+        print(tracker.is_in_idle_threshold(center))
 
         # rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         # combine the two frames
