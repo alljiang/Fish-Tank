@@ -5,6 +5,7 @@ from imagezmq import zmq
 import argparse
 import socket
 import time
+from tracking import Tracking
 
 class CameraClient:
 
@@ -30,10 +31,22 @@ class CameraClient:
 
     def sender_task(self):
         self.sender = self.create_sender()
+        tracker = Tracking()
         
         while(True):
             try:
-                ret, frame = self.cap.read()
+                _, frame = self.cap.read()
+
+                # do the tracking stuff
+                frame_original = frame.copy()
+                contour = tracker.find_contour(frame)
+                center, angle = tracker.calculate_direction(contour, frame)
+                idle = tracker.is_in_idle_threshold(center)
+                tracker.add_visuals(frame, contour, center, angle)
+
+                # scale down the frame by 2
+                frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+
                 self.sender.send_image(self.rpi_name, frame)
             except:
                 time.sleep(1)

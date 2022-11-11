@@ -42,13 +42,17 @@ def command_receive_handler(command):
     else:
         print("Unknown command: " + command)
 
-controller = Controller()
 
-camera_client = CameraClient()
-server = Server(command_receive_handler, camera_client.tcp_connection_receive_handler)
+if __name__ == "__main__":
+    controller = Controller()
 
-thread_server = Thread(target=server.server_start)
-thread_camera = Thread(target=camera_client.sender_task)
+    camera_client = CameraClient()
+    server = Server(command_receive_handler, camera_client.tcp_connection_receive_handler)
 
-thread_server.start()
-thread_camera.start()
+    thread_server = Thread(target=server.server_start)
+    thread_camera = Thread(target=camera_client.sender_task)
+
+    thread_server.start()
+    thread_camera.start()
+
+
