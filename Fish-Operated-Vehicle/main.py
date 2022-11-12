@@ -4,6 +4,8 @@ from threading import Thread
 from camera_client import CameraClient
 from controller import Controller
 from config import *
+import sys
+import time
 
 fish_speed = 500
 override_speed = 1000
@@ -58,11 +60,11 @@ if __name__ == "__main__":
     thread_server = Thread(target=server.server_start)
     thread_camera = Thread(target=camera_client.sender_task)
 
-    try:
-        thread_server.start()
-        thread_camera.start()
-    except (KeyboardInterrupt, SystemExit):
-        cleanup_stop_thread()
-        sys.exit()
+    thread_server.daemon = True
+    thread_camera.daemon = True
 
+    thread_server.start()
+    thread_camera.start()
 
+    while (1):
+        time.sleep(1)

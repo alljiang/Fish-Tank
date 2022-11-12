@@ -47,18 +47,20 @@ class CameraClient:
                 idle = tracker.is_in_idle_threshold(center, angle)
                 tracker.add_visuals(frame, contour, center, angle, idle)
                 tracker.add_visuals(filter, contour, center, angle, idle)
+
+                direction = angle + 90
+                if direction > 180:
+                    direction = direction - 360
+                elif direction <= -180:
+                    direction = direction + 360
             else:
                 idle = True
+                direction = 0
                 tracker.add_visuals_outline(frame)
                 
             # frame = filter
             frame = cv2.resize(frame, (0, 0), fx=0.50, fy=0.50)
 
-            direction = angle + 90
-            if direction > 180:
-                direction = direction - 360
-            elif direction <= -180:
-                direction = direction + 360
             self.controller_callback(idle, direction)
 
             try:

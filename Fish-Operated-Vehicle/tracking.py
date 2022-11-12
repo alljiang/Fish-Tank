@@ -28,7 +28,7 @@ class Tracking:
         contour_distance_from_center = 1000000
 
         for cnt in cnts:
-            x, y, w, h = cv2.boundingRect(cnt)
+            (x, y), (w, h), angle = cv2.minAreaRect(cnt)
             area = cv2.contourArea(cnt)
             
             size_check = False
@@ -44,10 +44,8 @@ class Tracking:
             bottom_right = (config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2], config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3])
             bound_top_left = (x, y)
             bound_bottom_right = (x + w, y + h)
-            if top_left[0] < bound_top_left[0] < bottom_right[0] \
-            and top_left[1] < bound_top_left[1] < bottom_right[1] \
-            and top_left[0] < bound_bottom_right[0] < bottom_right[0] \
-            and top_left[1] < bound_bottom_right[1] < bottom_right[1]:
+            if top_left[0] < x < bottom_right[0] \
+            and top_left[1] < y < bottom_right[1]:
                 bounds_check = True
             
             middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] / 2
@@ -178,8 +176,9 @@ class Tracking:
 
         difference1 = np.abs(angle1 - angle2)
         difference2 = np.abs(360 - angle1 + angle2)
+        difference3 = np.abs(360 - angle2 + angle1)
 
-        return min(difference1, difference2)
+        return min(difference1, difference2, difference3)
 
     def is_in_idle_threshold(self, point, direction):
         middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] // 2
@@ -199,22 +198,22 @@ class Tracking:
 
         valid_angles = []
         if point[0] > middle_x + config.CONTROL_THRESHOLD_DISTANCE // 2:
-            valid_angles.append((90 - config.ANGLE_BOUND_DEGREES, 0 + config.ANGLE_BOUND_DEGREES))
+            valid_angles.append((90 - config.ANGLE_BOUND_DEGREES, 90 + config.ANGLE_BOUND_DEGREES))
         elif point[0] < middle_x - config.CONTROL_THRESHOLD_DISTANCE // 2:
-            valid_angles.append((-90 - config.ANGLE_BOUND_DEGREES, 180 + config.ANGLE_BOUND_DEGREES))
+            valid_angles.append((-90 - config.ANGLE_BOUND_DEGREES, -90 + config.ANGLE_BOUND_DEGREES))
         if point[1] < middle_y - config.CONTROL_THRESHOLD_DISTANCE // 2:
-            valid_angles.append((0 - config.ANGLE_BOUND_DEGREES, -90 + config.ANGLE_BOUND_DEGREES))
+            valid_angles.append((0 - config.ANGLE_BOUND_DEGREES, 0 + config.ANGLE_BOUND_DEGREES))
         elif point[1] > middle_y + config.CONTROL_THRESHOLD_DISTANCE // 2:
-            valid_angles.append((180 - config.ANGLE_BOUND_DEGREES, 90 + config.ANGLE_BOUND_DEGREES))
+            valid_angles.append((180 - config.ANGLE_BOUND_DEGREES, 180 + config.ANGLE_BOUND_DEGREES))
 
-        print(len(valid_angles))
         angle_in_bounds = False
 
         for valid_angle in valid_angles:
             # convert to 0-360
-            print(direction, valid_angle[0], valid_angle[1])
-            if self.difference_between_2_angles(direction, valid_angle[0]) < config.ANGLE_BOUND_DEGREES \
-               and self.difference_between_2_angles(direction, valid_angle[1]) < config.ANGLE_BOUND_DEGREES:
+            print(direction, valid_angle)
+            print(self.difference_between_2_angles(direction, valid_angle[0]), self.difference_between_2_angles(direction, valid_angle[1]))
+            if self.difference_between_2_angles(direction, valid_angle[0]) < config.ANGLE_BOUND_DEGREES*2 \
+               and self.difference_between_2_angles(direction, valid_angle[1]) < config.ANGLE_BOUND_DEGREES*2:
                 angle_in_bounds = True
         
 
