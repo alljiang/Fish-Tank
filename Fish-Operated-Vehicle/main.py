@@ -4,13 +4,18 @@ from threading import Thread
 from camera_client import CameraClient
 from controller import Controller
 from config import *
+import sys
+import time
+import numpy as np
 
 fish_speed = 500
 override_speed = 1000
+fish_drive = False
 
 def command_receive_handler(command):
     global fish_speed
     global override_speed
+    global fish_drive
 
     if command == TCP_FORWARD:
         controller.send_velocity(override_speed, 0, 0)
@@ -26,8 +31,10 @@ def command_receive_handler(command):
         controller.send_velocity(0, 0, -override_speed)
     elif command == TCP_DISABLE:
         controller.send_velocity(0, 0, 0)
+        fish_drive = False
     elif command == TCP_ENABLE:
         controller.send_velocity(0, 0, 0)
+        fish_drive = True
     elif command.startswith(TCP_SET_FISH_SPEED_HEADER):
         fish_speed = int(command[len(TCP_SET_FISH_SPEED_HEADER):])
         print("Fish speed set to " + str(fish_speed))
@@ -43,11 +50,14 @@ def command_receive_handler(command):
         print("Unknown command: " + command)
 
 def camera_controller_callback(idle, direction):
-    if idle:
+    if idle or not fish_drive:
         controller.send_velocity(0, 0, 0)
-        print("stop")
     else:
         print("move " + str(direction))
+        
+        forward_speed = fish_speed * np.cos(direction)
+        sideways_speed = fish_speed * np.sin(direction)
+        # controller.send_velocity(forward_speed, sideways_speed, 0)
 
 if __name__ == "__main__":
     controller = Controller()
@@ -58,11 +68,11 @@ if __name__ == "__main__":
     thread_server = Thread(target=server.server_start)
     thread_camera = Thread(target=camera_client.sender_task)
 
-    try:
-        thread_server.start()
-        thread_camera.start()
-    except (KeyboardInterrupt, SystemExit):
-        cleanup_stop_thread()
-        sys.exit()
+    thread_server.daemon = True
+    thread_camera.daemon = True
 
+    thread_server.start()
+    thread_camera.start()
 
+    while (1):
+        time.sleep(1)
