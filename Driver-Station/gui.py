@@ -69,6 +69,7 @@ class Ui(object):
         self.timer1.start()
 
         thread_camera = Thread(target=self.camera_task)
+        thread_camera.daemon = True
         thread_camera.start()
 
     def exitHandler(self, event):
