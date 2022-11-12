@@ -28,7 +28,7 @@ class Tracking:
         contour_distance_from_center = 1000000
 
         for cnt in cnts:
-            (x, y), (w, h), angle = cv2.minAreaRect(cnt)
+            (x, y), (w, h), _ = cv2.minAreaRect(cnt)
             area = cv2.contourArea(cnt)
             
             size_check = False
@@ -97,23 +97,6 @@ class Tracking:
         start_point = (int(center[0]), int(center[1]))
         end_point = (int(center[0] + config.ARROW_LENGTH * np.cos(direction * np.pi / 180)), int(center[1] + config.ARROW_LENGTH * np.sin(direction * np.pi / 180)))
         cv2.arrowedLine(frame, start_point, end_point, color, 1, tipLength=0.5)
-
-        # draw angle comparison
-        middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] // 2
-        middle_y = config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3] // 2
-        angle = np.arctan2(middle_y - center[1], middle_x - center[0]) * 180 / np.pi + 180
-        left_bound = angle - config.ANGLE_BOUND_DEGREES
-        right_bound = angle + config.ANGLE_BOUND_DEGREES
-
-        # color = (0, 255, 0)
-        # angle_difference = np.abs((angle - direction + 180) % 360 - 180)
-        # if angle_difference > config.ANGLE_BOUND_DEGREES:
-        #     color = (0, 0, 255)
-
-        # cv2.line(frame, start_point, (int(start_point[0] + config.ANGLE_BOUND_LENGTH * np.cos(left_bound * np.pi / 180)), 
-        #             int(start_point[1] + config.ANGLE_BOUND_LENGTH * np.sin(left_bound * np.pi / 180))), color, 1)
-        # cv2.line(frame, start_point, (int(start_point[0] + config.ANGLE_BOUND_LENGTH * np.cos(right_bound * np.pi / 180)), 
-        #             int(start_point[1] + config.ANGLE_BOUND_LENGTH * np.sin(right_bound * np.pi / 180))), color, 1)
 
     def calculate_direction(self, contour, frame):
         if contour is not None:
@@ -184,12 +167,6 @@ class Tracking:
         middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] // 2
         middle_y = config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3] // 2
 
-        # location_idle = False
-
-        # if point[0] > middle_x - config.CONTROL_THRESHOLD_DISTANCE // 2 and point[0] < middle_x + config.CONTROL_THRESHOLD_DISTANCE // 2:
-        #     if point[1] < middle_y + config.CONTROL_THRESHOLD_DISTANCE // 2 and point[1] > middle_y - config.CONTROL_THRESHOLD_DISTANCE // 2:
-        #         location_idle = True
-
         direction += 90
         if direction > 180:
             direction = direction - 360
@@ -210,20 +187,9 @@ class Tracking:
 
         for valid_angle in valid_angles:
             # convert to 0-360
-            print(direction, valid_angle)
-            print(self.difference_between_2_angles(direction, valid_angle[0]), self.difference_between_2_angles(direction, valid_angle[1]))
             if self.difference_between_2_angles(direction, valid_angle[0]) < config.ANGLE_BOUND_DEGREES*2 \
                and self.difference_between_2_angles(direction, valid_angle[1]) < config.ANGLE_BOUND_DEGREES*2:
                 angle_in_bounds = True
-        
+                break
 
-        # middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] // 2
-        # middle_y = config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3] // 2
-        # angle = np.arctan2(middle_y - point[1], middle_x - point[0]) * 180 / np.pi + 180
-
-        # angle_difference = np.abs((angle - direction + 180) % 360 - 180)
-        # if angle_difference > config.ANGLE_BOUND_DEGREES:
-        #     angle_idle = True
-
-        # return location_idle or angle_idle
         return not angle_in_bounds
