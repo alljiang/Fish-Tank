@@ -42,17 +42,27 @@ def command_receive_handler(command):
     else:
         print("Unknown command: " + command)
 
+def camera_controller_callback(idle, direction):
+    if idle:
+        controller.send_velocity(0, 0, 0)
+        print("stop")
+    else:
+        print("move " + str(direction))
 
 if __name__ == "__main__":
     controller = Controller()
 
-    camera_client = CameraClient()
+    camera_client = CameraClient(camera_controller_callback)
     server = Server(command_receive_handler, camera_client.tcp_connection_receive_handler)
 
     thread_server = Thread(target=server.server_start)
     thread_camera = Thread(target=camera_client.sender_task)
 
-    thread_server.start()
-    thread_camera.start()
+    try:
+        thread_server.start()
+        thread_camera.start()
+    except (KeyboardInterrupt, SystemExit):
+        cleanup_stop_thread()
+        sys.exit()
 
 

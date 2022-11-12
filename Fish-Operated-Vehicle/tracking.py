@@ -20,7 +20,11 @@ class Tracking:
 
         cnts, _ = cv2.findContours(grayscale, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+        # to binary
+        cv2.drawContours(result, cnts, -1, (0,255,0), 1)
+
         best_contour = None
+        found_contour = False
         contour_distance_from_center = 1000000
 
         for cnt in cnts:
@@ -46,7 +50,6 @@ class Tracking:
             and top_left[1] < bound_bottom_right[1] < bottom_right[1]:
                 bounds_check = True
             
-
             middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] / 2
             middle_y = config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3] / 2
             distance = ((x + w / 2) - middle_x) ** 2 + ((y + h / 2) - middle_y) ** 2
@@ -55,11 +58,12 @@ class Tracking:
                 # valid contour
                 if distance < contour_distance_from_center:
                     best_contour = cnt
+                    found_contour = True
                     contour_distance_from_center = distance
 
-        return best_contour
+        return found_contour, best_contour, result
 
-    def add_visuals(self, frame, contour, center, direction):
+    def add_visuals_outline(self, frame):
         # add crosshair in the middle of ROI
         middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] // 2
         middle_y = config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3] // 2
@@ -73,6 +77,19 @@ class Tracking:
         cv2.rectangle(frame, (config.ROI_PARAMETERS[0], config.ROI_PARAMETERS[1]),
                             (config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2], config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3]),
                             (255, 255, 255), 1)
+        
+        # draw control threshold
+        control_threshold_top_left = (middle_x - config.CONTROL_THRESHOLD_DISTANCE // 2, middle_y + config.CONTROL_THRESHOLD_DISTANCE // 2)
+        control_threshold_bottom_right = (middle_x + config.CONTROL_THRESHOLD_DISTANCE // 2, middle_y - config.CONTROL_THRESHOLD_DISTANCE // 2)
+        cv2.rectangle(frame, control_threshold_top_left, control_threshold_bottom_right, (255, 0, 0), 1)
+
+    def add_visuals(self, frame, contour, center, direction, idle):
+        self.add_visuals_outline(frame)
+
+        if idle:
+            color = (0, 255, 0)
+        else:
+            color = (255, 0, 0)
 
         # draw contour
         if contour is not None:
@@ -81,12 +98,24 @@ class Tracking:
         # draw arrow
         start_point = (int(center[0]), int(center[1]))
         end_point = (int(center[0] + config.ARROW_LENGTH * np.cos(direction * np.pi / 180)), int(center[1] + config.ARROW_LENGTH * np.sin(direction * np.pi / 180)))
-        cv2.arrowedLine(frame, start_point, end_point, (0, 255, 0), 1, tipLength=0.5)
+        cv2.arrowedLine(frame, start_point, end_point, color, 1, tipLength=0.5)
 
-        # draw control threshold
-        control_threshold_top_left = (middle_x - config.CONTROL_THRESHOLD_DISTANCE // 2, middle_y + config.CONTROL_THRESHOLD_DISTANCE // 2)
-        control_threshold_bottom_right = (middle_x + config.CONTROL_THRESHOLD_DISTANCE // 2, middle_y - config.CONTROL_THRESHOLD_DISTANCE // 2)
-        cv2.rectangle(frame, control_threshold_top_left, control_threshold_bottom_right, (255, 0, 0), 1)
+        # draw angle comparison
+        middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] // 2
+        middle_y = config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3] // 2
+        angle = np.arctan2(middle_y - center[1], middle_x - center[0]) * 180 / np.pi + 180
+        left_bound = angle - config.ANGLE_BOUND_DEGREES
+        right_bound = angle + config.ANGLE_BOUND_DEGREES
+
+        # color = (0, 255, 0)
+        # angle_difference = np.abs((angle - direction + 180) % 360 - 180)
+        # if angle_difference > config.ANGLE_BOUND_DEGREES:
+        #     color = (0, 0, 255)
+
+        # cv2.line(frame, start_point, (int(start_point[0] + config.ANGLE_BOUND_LENGTH * np.cos(left_bound * np.pi / 180)), 
+        #             int(start_point[1] + config.ANGLE_BOUND_LENGTH * np.sin(left_bound * np.pi / 180))), color, 1)
+        # cv2.line(frame, start_point, (int(start_point[0] + config.ANGLE_BOUND_LENGTH * np.cos(right_bound * np.pi / 180)), 
+        #             int(start_point[1] + config.ANGLE_BOUND_LENGTH * np.sin(right_bound * np.pi / 180))), color, 1)
 
     def calculate_direction(self, contour, frame):
         if contour is not None:
@@ -135,18 +164,67 @@ class Tracking:
             if left_pixels > right_pixels:
                 angle = angle - 180
 
-        return (xc, yc), angle
+            return (xc, yc), angle
+        
+        return None, None
 
     def find_center_gui(self, frame):
         r = cv2.selectROI(frame)
         print(r)
 
-    def is_in_idle_threshold(self, point):
+    def difference_between_2_angles(self, angle1, angle2):
+        angle1 = (angle1 + 360) % 360
+        angle2 = (angle2 + 360) % 360
+
+        difference1 = np.abs(angle1 - angle2)
+        difference2 = np.abs(360 - angle1 + angle2)
+
+        return min(difference1, difference2)
+
+    def is_in_idle_threshold(self, point, direction):
         middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] // 2
         middle_y = config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3] // 2
 
-        if point[0] > middle_x - config.CONTROL_THRESHOLD_DISTANCE // 2 and point[0] < middle_x + config.CONTROL_THRESHOLD_DISTANCE // 2:
-            if point[1] < middle_y + config.CONTROL_THRESHOLD_DISTANCE // 2 and point[1] > middle_y - config.CONTROL_THRESHOLD_DISTANCE // 2:
-                return True
+        # location_idle = False
 
-        return False
+        # if point[0] > middle_x - config.CONTROL_THRESHOLD_DISTANCE // 2 and point[0] < middle_x + config.CONTROL_THRESHOLD_DISTANCE // 2:
+        #     if point[1] < middle_y + config.CONTROL_THRESHOLD_DISTANCE // 2 and point[1] > middle_y - config.CONTROL_THRESHOLD_DISTANCE // 2:
+        #         location_idle = True
+
+        direction += 90
+        if direction > 180:
+            direction = direction - 360
+        elif direction <= -180:
+            direction = direction + 360
+
+        valid_angles = []
+        if point[0] > middle_x + config.CONTROL_THRESHOLD_DISTANCE // 2:
+            valid_angles.append((90 - config.ANGLE_BOUND_DEGREES, 0 + config.ANGLE_BOUND_DEGREES))
+        elif point[0] < middle_x - config.CONTROL_THRESHOLD_DISTANCE // 2:
+            valid_angles.append((-90 - config.ANGLE_BOUND_DEGREES, 180 + config.ANGLE_BOUND_DEGREES))
+        if point[1] < middle_y - config.CONTROL_THRESHOLD_DISTANCE // 2:
+            valid_angles.append((0 - config.ANGLE_BOUND_DEGREES, -90 + config.ANGLE_BOUND_DEGREES))
+        elif point[1] > middle_y + config.CONTROL_THRESHOLD_DISTANCE // 2:
+            valid_angles.append((180 - config.ANGLE_BOUND_DEGREES, 90 + config.ANGLE_BOUND_DEGREES))
+
+        print(len(valid_angles))
+        angle_in_bounds = False
+
+        for valid_angle in valid_angles:
+            # convert to 0-360
+            print(direction, valid_angle[0], valid_angle[1])
+            if self.difference_between_2_angles(direction, valid_angle[0]) < config.ANGLE_BOUND_DEGREES \
+               and self.difference_between_2_angles(direction, valid_angle[1]) < config.ANGLE_BOUND_DEGREES:
+                angle_in_bounds = True
+        
+
+        # middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] // 2
+        # middle_y = config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3] // 2
+        # angle = np.arctan2(middle_y - point[1], middle_x - point[0]) * 180 / np.pi + 180
+
+        # angle_difference = np.abs((angle - direction + 180) % 360 - 180)
+        # if angle_difference > config.ANGLE_BOUND_DEGREES:
+        #     angle_idle = True
+
+        # return location_idle or angle_idle
+        return not angle_in_bounds

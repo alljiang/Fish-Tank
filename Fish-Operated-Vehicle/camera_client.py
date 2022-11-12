@@ -2,17 +2,18 @@ import numpy as np
 import cv2
 import imagezmq
 from imagezmq import zmq
-import argparse
 import socket
 import time
 from tracking import Tracking
+import traceback
 
 class CameraClient:
 
-    def __init__(self):
+    def __init__(self, controller_callback):
         self.cap = cv2.VideoCapture(0)
         self.rpi_name = socket.gethostname()
         self.ip = ''
+        self.controller_callback = controller_callback
 
     def __del__(self):
         self.cap.release()
@@ -32,26 +33,38 @@ class CameraClient:
     def sender_task(self):
         self.sender = self.create_sender()
         tracker = Tracking()
+
         
         while(True):
-            try:
-                _, frame = self.cap.read()
+            _, frame = self.cap.read()
 
-                # do the tracking stuff
-                frame_original = frame.copy()
-                contour = tracker.find_contour(frame)
+            # do the tracking stuff
+            frame_original = frame.copy()
+            ret, contour, filter = tracker.find_contour(frame)
+            if ret:
+                # found fish
                 center, angle = tracker.calculate_direction(contour, frame)
-                idle = tracker.is_in_idle_threshold(center)
-                tracker.add_visuals(frame, contour, center, angle)
+                idle = tracker.is_in_idle_threshold(center, angle)
+                tracker.add_visuals(frame, contour, center, angle, idle)
+                tracker.add_visuals(filter, contour, center, angle, idle)
+            else:
+                idle = True
+                tracker.add_visuals_outline(frame)
+                
+            # frame = filter
+            frame = cv2.resize(frame, (0, 0), fx=0.50, fy=0.50)
 
-                # scale down the frame by 2
-                frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+            direction = angle + 90
+            if direction > 180:
+                direction = direction - 360
+            elif direction <= -180:
+                direction = direction + 360
+            self.controller_callback(idle, direction)
 
+            try:
                 self.sender.send_image(self.rpi_name, frame)
-            except:
-                time.sleep(1)
-
+            except Exception as e:
                 # reset sender
                 self.sender.close()
-                print("Attempting to reconnect to server...")
+                # print("Attempting to reconnect to server...")
                 self.sender = self.create_sender()
