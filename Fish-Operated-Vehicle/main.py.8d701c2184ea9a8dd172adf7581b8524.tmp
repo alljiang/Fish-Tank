@@ -56,12 +56,6 @@ class CommandWrapper:
             self.recording = False
         elif command == TCP_STREAM_RAW:
             self.stream_mode = TCP_STREAM_RAW
-        elif command == TCP_STREAM_RAW_OVERLAY:
-            self.stream_mode = TCP_STREAM_RAW_OVERLAY
-        elif command == TCP_STREAM_THRESHOLD:
-            self.stream_mode = TCP_STREAM_THRESHOLD
-        elif command == TCP_STREAM_THRESHOLD_OVERLAY:
-            self.stream_mode = TCP_STREAM_THRESHOLD_OVERLAY
         else:
             print("Unknown command: " + command)
 

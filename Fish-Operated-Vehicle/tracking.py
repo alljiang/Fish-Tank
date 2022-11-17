@@ -187,6 +187,7 @@ class Tracking:
 
         for valid_angle in valid_angles:
             # convert to 0-360
+            angle_in_bounds = True
             if self.difference_between_2_angles(direction, valid_angle[0]) < config.ANGLE_BOUND_DEGREES*2 \
                and self.difference_between_2_angles(direction, valid_angle[1]) < config.ANGLE_BOUND_DEGREES*2:
                 angle_in_bounds = True

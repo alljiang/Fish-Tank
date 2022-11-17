@@ -9,11 +9,11 @@ import traceback
 
 class CameraClient:
 
-    def __init__(self, controller_callback):
+    def __init__(self, command):
         self.cap = cv2.VideoCapture(0)
         self.rpi_name = socket.gethostname()
         self.ip = ''
-        self.controller_callback = controller_callback
+        self.command = command
 
     def __del__(self):
         self.cap.release()
@@ -34,7 +34,6 @@ class CameraClient:
         self.sender = self.create_sender()
         tracker = Tracking()
 
-        
         while(True):
             _, frame = self.cap.read()
 
@@ -58,10 +57,10 @@ class CameraClient:
                 direction = 0
                 tracker.add_visuals_outline(frame)
                 
-            # frame = filter
+            frame = filter
             frame = cv2.resize(frame, (0, 0), fx=0.50, fy=0.50)
 
-            self.controller_callback(idle, direction)
+            self.command.camera_controller_callback(idle, direction)
 
             try:
                 self.sender.send_image(self.rpi_name, frame)
