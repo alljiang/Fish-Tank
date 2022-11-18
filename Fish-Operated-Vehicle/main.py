@@ -19,6 +19,8 @@ class CommandWrapper:
         self.fish_speed = 50
         self.override_speed = 50
         self.fish_drive = False
+        self.stream_mode = TCP_STREAM_RAW_OVERLAY
+        self.recording = False
 
     def command_receive_handler(self, command):
         if command == TCP_FORWARD:
@@ -65,7 +67,7 @@ class CommandWrapper:
         else:
             print("Unknown command: " + command)
 
-    def camera_controller_callback(idle, direction):
+    def camera_controller_callback(self, idle, direction):
         if idle or not fish_drive:
             controller.send_velocity(0, 0, 0)
         else:
@@ -77,7 +79,7 @@ class CommandWrapper:
 
 if __name__ == "__main__":
     controller = Controller()
-    command = CommandWrapper()
+    command = CommandWrapper(controller)
 
     camera_client = CameraClient(command)
     server = Server(command.command_receive_handler, camera_client.tcp_connection_receive_handler)

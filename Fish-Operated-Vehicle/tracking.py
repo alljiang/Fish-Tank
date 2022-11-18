@@ -25,10 +25,13 @@ class Tracking:
 
         best_contour = None
         found_contour = False
-        contour_distance_from_center = 1000000
+        best_contour_area = 0
 
         for cnt in cnts:
-            (x, y), (w, h), _ = cv2.minAreaRect(cnt)
+            rect = cv2.minAreaRect(cnt)
+            (x, y), (w, h), _ = rect
+            box = cv2.boxPoints(rect)
+            box = np.int0(box)
             area = cv2.contourArea(cnt)
             
             size_check = False
@@ -54,10 +57,12 @@ class Tracking:
 
             if size_check and bounds_check:
                 # valid contour
-                if distance < contour_distance_from_center:
+                # draw rectangle
+                cv2.drawContours(result, [box], 0, (255, 128, 0), 1)
+                if area > best_contour_area:
                     best_contour = cnt
                     found_contour = True
-                    contour_distance_from_center = distance
+                    best_contour_area = area
 
         return found_contour, best_contour, result
 
