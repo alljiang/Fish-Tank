@@ -43,9 +43,8 @@ class CameraClient:
 
             # do the tracking stuff
             frame_raw = frame.copy()
-            ret, contour, frame_threshold = tracker.find_contour(frame)
+            ret, contour, frame_threshold_overlay, frame_threshold = tracker.find_contour(frame)
             frame_raw_overlay = frame_raw.copy()
-            frame_threshold_overlay = frame_threshold.copy()
             if ret:
                 # found fish
                 center, angle = tracker.calculate_direction(contour, frame)
@@ -74,6 +73,7 @@ class CameraClient:
             else:
                 frame = frame_raw_overlay
 
+            self.video_recorder_handler(frame_raw, frame_raw_overlay, frame_threshold_overlay)
             frame = cv2.resize(frame, (0, 0), fx=0.50, fy=0.50)
 
             self.command.camera_controller_callback(idle, direction)
@@ -87,14 +87,15 @@ class CameraClient:
                 self.sender = self.create_sender()
 
     def video_recorder_handler(self, frame1, frame2, frame3):
-        do_recording = self.command.video_recording
+        do_recording = self.command.recording
 
         if do_recording:
             if not self.recording_started:
                 self.recording_started = True
-                self.video_recorder1 = cv2.VideoWriter('video1.avi', cv2.VideoWriter_fourcc(*'XVID'), 20.0, IMAGE_DIMENSIONS)
-                self.video_recorder2 = cv2.VideoWriter('video2.avi', cv2.VideoWriter_fourcc(*'XVID'), 20.0, IMAGE_DIMENSIONS)
-                self.video_recorder3 = cv2.VideoWriter('video3.avi', cv2.VideoWriter_fourcc(*'XVID'), 20.0, IMAGE_DIMENSIONS)
+                self.video_recorder1 = cv2.VideoWriter(SAVED_VIDEOS_DIRECTORY_PATH + 'video1.avi', cv2.VideoWriter_fourcc(*'XVID'), 5.0, IMAGE_DIMENSIONS)
+                self.video_recorder2 = cv2.VideoWriter(SAVED_VIDEOS_DIRECTORY_PATH + 'video2.avi', cv2.VideoWriter_fourcc(*'XVID'), 5.0, IMAGE_DIMENSIONS)
+                self.video_recorder3 = cv2.VideoWriter(SAVED_VIDEOS_DIRECTORY_PATH + 'video3.avi', cv2.VideoWriter_fourcc(*'XVID'), 5.0, IMAGE_DIMENSIONS)
+                print("Recording started!")
 
             self.video_recorder1.write(frame1)
             self.video_recorder2.write(frame2)
@@ -104,3 +105,4 @@ class CameraClient:
             self.video_recorder1.release()
             self.video_recorder2.release()
             self.video_recorder3.release()
+            print("Recording stopped!")

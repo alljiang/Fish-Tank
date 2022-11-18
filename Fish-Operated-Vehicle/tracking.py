@@ -5,6 +5,11 @@ import config
 class Tracking:
 
     def find_contour(self, frame):
+        roi_mask = np.zeros(frame.shape, dtype=np.uint8)
+        roi_mask[config.ROI_PARAMETERS[1]:config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3],
+                    config.ROI_PARAMETERS[0]:config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2]] = 255
+        frame = cv2.bitwise_and(frame, roi_mask)
+
         # convert to hsv
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
@@ -14,13 +19,20 @@ class Tracking:
 
         mask = cv2.inRange(hsv, lower, upper)
         result = cv2.bitwise_and(frame, frame, mask=mask)
+        result = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
 
-        _, result = cv2.threshold(result, 20, 100, cv2.THRESH_BINARY)
-        grayscale = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
+        _, result = cv2.threshold(result, 1, 255, cv2.THRESH_BINARY)
+        binary = result.copy()
 
-        cnts, _ = cv2.findContours(grayscale, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # apply open filter
+        filter_size = 3
+        kernel = np.ones((filter_size, filter_size), np.uint8)
+        binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
 
-        # to binary
+        cnts, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # no more use for result, we can do whatever we want with it now with color
+        result = cv2.cvtColor(result, cv2.COLOR_GRAY2BGR)
         cv2.drawContours(result, cnts, -1, (0,255,0), 1)
 
         best_contour = None
@@ -35,27 +47,18 @@ class Tracking:
             area = cv2.contourArea(cnt)
             
             size_check = False
-            bounds_check = False
 
             if config.CONTOUR_RECTANGLE_BOUND[0] < h < config.CONTOUR_RECTANGLE_BOUND[1] \
             and config.CONTOUR_RECTANGLE_BOUND[0] < w < config.CONTOUR_RECTANGLE_BOUND[1] \
             and config.CONTOUR_AREA_BOUND[0] < area < config.CONTOUR_AREA_BOUND[1] \
             and config.CONTOUR_RECTANGLE_AREA_BOUND[0] < w * h < config.CONTOUR_RECTANGLE_AREA_BOUND[1]:
                 size_check = True
-
-            top_left = (config.ROI_PARAMETERS[0], config.ROI_PARAMETERS[1])
-            bottom_right = (config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2], config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3])
-            bound_top_left = (x, y)
-            bound_bottom_right = (x + w, y + h)
-            if top_left[0] < x < bottom_right[0] \
-            and top_left[1] < y < bottom_right[1]:
-                bounds_check = True
             
             middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] / 2
             middle_y = config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3] / 2
             distance = ((x + w / 2) - middle_x) ** 2 + ((y + h / 2) - middle_y) ** 2
 
-            if size_check and bounds_check:
+            if size_check:
                 # valid contour
                 # draw rectangle
                 cv2.drawContours(result, [box], 0, (255, 128, 0), 1)
@@ -64,7 +67,7 @@ class Tracking:
                     found_contour = True
                     best_contour_area = area
 
-        return found_contour, best_contour, result
+        return found_contour, best_contour, result, binary
 
     def add_visuals_outline(self, frame):
         # add crosshair in the middle of ROI
@@ -108,6 +111,14 @@ class Tracking:
             ellipse = cv2.fitEllipseDirect(contour)
             (xc, yc), (d1, d2), angle = ellipse
             angle = ellipse[2] - 90
+
+            if config.BOZO_IS_BAD:
+                # bozo is bad
+                # calculate angle of xc, yc relative to center
+                middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] // 2
+                middle_y = config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3] // 2
+                angle = np.arctan2(yc - middle_y, xc - middle_x) * 180 / np.pi
+                return angle
             
             ellipse_mask = np.zeros(frame.shape, dtype=np.uint8)
             cv2.ellipse(ellipse_mask, ellipse, (255, 255, 255), -1)
@@ -154,10 +165,6 @@ class Tracking:
         
         return None, None
 
-    def find_center_gui(self, frame):
-        r = cv2.selectROI(frame)
-        print(r)
-
     def difference_between_2_angles(self, angle1, angle2):
         angle1 = (angle1 + 360) % 360
         angle2 = (angle2 + 360) % 360
@@ -169,6 +176,9 @@ class Tracking:
         return min(difference1, difference2, difference3)
 
     def is_in_idle_threshold(self, point, direction):
+        if config.BOZO_IS_BAD:
+            return True
+
         middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] // 2
         middle_y = config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3] // 2
 

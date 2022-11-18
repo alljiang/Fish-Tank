@@ -75,7 +75,7 @@ class CommandWrapper:
             
             forward_speed = int(fish_speed * np.cos(direction))
             sideways_speed = int(fish_speed * np.sin(direction))
-            controller.send_velocity(forward_speed, sideways_speed, 0)
+            # controller.send_velocity(forward_speed, sideways_speed, 0)
 
 if __name__ == "__main__":
     controller = Controller()
