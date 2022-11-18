@@ -38,9 +38,11 @@ class CommandWrapper:
         elif command == TCP_DISABLE:
             self.controller.send_velocity(0, 0, 0)
             self.fish_drive = False
+            print("Fish drive disabled")
         elif command == TCP_ENABLE:
             self.controller.send_velocity(0, 0, 0)
             self.fish_drive = True
+            print("Fish drive enabled")
         elif command.startswith(TCP_SET_FISH_SPEED_HEADER):
             self.fish_speed = int(command[len(TCP_SET_FISH_SPEED_HEADER):])
             print("Fish speed set to " + str(self.fish_speed))
@@ -68,7 +70,7 @@ class CommandWrapper:
             print("Unknown command: " + command)
 
     def camera_controller_callback(self, idle, direction):
-        if idle or not fish_drive:
+        if idle or not self.fish_drive:
             controller.send_velocity(0, 0, 0)
         else:
             print("move " + str(direction))

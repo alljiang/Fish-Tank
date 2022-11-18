@@ -118,7 +118,7 @@ class Tracking:
                 middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] // 2
                 middle_y = config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3] // 2
                 angle = np.arctan2(yc - middle_y, xc - middle_x) * 180 / np.pi
-                return angle
+                return (xc, yc), angle
             
             ellipse_mask = np.zeros(frame.shape, dtype=np.uint8)
             cv2.ellipse(ellipse_mask, ellipse, (255, 255, 255), -1)
@@ -176,8 +176,8 @@ class Tracking:
         return min(difference1, difference2, difference3)
 
     def is_in_idle_threshold(self, point, direction):
-        if config.BOZO_IS_BAD:
-            return True
+        if config.BOZO_IS_BAD is True:
+            return False
 
         middle_x = config.ROI_PARAMETERS[0] + config.ROI_PARAMETERS[2] // 2
         middle_y = config.ROI_PARAMETERS[1] + config.ROI_PARAMETERS[3] // 2

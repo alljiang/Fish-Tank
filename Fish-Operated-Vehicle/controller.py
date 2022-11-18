@@ -39,7 +39,7 @@ class Controller:
 
         while True:
             if time.time() * 1000 - time_ms > 100:
-                print("\nERROR: Failed to receive acknowledgement")
+                # print("\nERROR: Failed to receive acknowledgement")
                 return 1
 
             try:
