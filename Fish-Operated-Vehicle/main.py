@@ -8,62 +8,83 @@ import sys
 import time
 import numpy as np
 
-fish_speed = 500
-override_speed = 1000
+fish_speed = 50
+override_speed = 50
 fish_drive = False
 
-def command_receive_handler(command):
-    global fish_speed
-    global override_speed
-    global fish_drive
+class CommandWrapper:
 
-    if command == TCP_FORWARD:
-        controller.send_velocity(override_speed, 0, 0)
-    elif command == TCP_BACKWARD:
-        controller.send_velocity(-override_speed, 0, 0)
-    elif command == TCP_LEFT:
-        controller.send_velocity(0, -override_speed, 0)
-    elif command == TCP_RIGHT:
-        controller.send_velocity(0, override_speed, 0)
-    elif command == TCP_ROTATE_CW:
-        controller.send_velocity(0, 0, override_speed)
-    elif command == TCP_ROTATE_CCW:
-        controller.send_velocity(0, 0, -override_speed)
-    elif command == TCP_DISABLE:
-        controller.send_velocity(0, 0, 0)
-        fish_drive = False
-    elif command == TCP_ENABLE:
-        controller.send_velocity(0, 0, 0)
-        fish_drive = True
-    elif command.startswith(TCP_SET_FISH_SPEED_HEADER):
-        fish_speed = int(command[len(TCP_SET_FISH_SPEED_HEADER):])
-        print("Fish speed set to " + str(fish_speed))
-    elif command.startswith(TCP_SET_OVERRIDE_SPEED_HEADER):
-        override_speed = int(command[len(TCP_SET_OVERRIDE_SPEED_HEADER):])
-        print("Override speed set to " + str(override_speed))
-    elif command.startswith(TCP_LED_RGB):
-        rgb = command[len(TCP_LED_RGB):].split(",")
-        controller.send_light(int(rgb[0]), int(rgb[1]), int(rgb[2]))
-    elif command == TCP_LED_PARTY:
-        controller.send_light_party()
-    else:
-        print("Unknown command: " + command)
+    def __init__(self, controller):
+        self.controller = controller
+        self.fish_speed = 50
+        self.override_speed = 50
+        self.fish_drive = False
+        self.stream_mode = TCP_STREAM_RAW_OVERLAY
+        self.recording = False
 
-def camera_controller_callback(idle, direction):
-    if idle or not fish_drive:
-        controller.send_velocity(0, 0, 0)
-    else:
-        print("move " + str(direction))
-        
-        forward_speed = fish_speed * np.cos(direction)
-        sideways_speed = fish_speed * np.sin(direction)
-        # controller.send_velocity(forward_speed, sideways_speed, 0)
+    def command_receive_handler(self, command):
+        if command == TCP_FORWARD:
+            self.controller.send_velocity(self.override_speed, 0, 0)
+        elif command == TCP_BACKWARD:
+            self.controller.send_velocity(-self.override_speed, 0, 0)
+        elif command == TCP_LEFT:
+            self.controller.send_velocity(0, -self.override_speed, 0)
+        elif command == TCP_RIGHT:
+            self.controller.send_velocity(0, self.override_speed, 0)
+        elif command == TCP_ROTATE_CW:
+            self.controller.send_velocity(0, 0, self.override_speed)
+        elif command == TCP_ROTATE_CCW:
+            self.controller.send_velocity(0, 0, -self.override_speed)
+        elif command == TCP_DISABLE:
+            self.controller.send_velocity(0, 0, 0)
+            self.fish_drive = False
+            print("Fish drive disabled")
+        elif command == TCP_ENABLE:
+            self.controller.send_velocity(0, 0, 0)
+            self.fish_drive = True
+            print("Fish drive enabled")
+        elif command.startswith(TCP_SET_FISH_SPEED_HEADER):
+            self.fish_speed = int(command[len(TCP_SET_FISH_SPEED_HEADER):])
+            print("Fish speed set to " + str(self.fish_speed))
+        elif command.startswith(TCP_SET_OVERRIDE_SPEED_HEADER):
+            self.override_speed = int(command[len(TCP_SET_OVERRIDE_SPEED_HEADER):])
+            print("Override speed set to " + str(self.override_speed))
+        elif command.startswith(TCP_LED_RGB):
+            rgb = command[len(TCP_LED_RGB):].split(",")
+            self.controller.send_light(int(rgb[0]), int(rgb[1]), int(rgb[2]))
+        elif command == TCP_LED_PARTY:
+            self.controller.send_light_party()
+        elif command == TCP_RECORDING_START:
+            self.recording = True
+        elif command == TCP_RECORDING_STOP:
+            self.recording = False
+        elif command == TCP_STREAM_RAW:
+            self.stream_mode = TCP_STREAM_RAW
+        elif command == TCP_STREAM_RAW_OVERLAY:
+            self.stream_mode = TCP_STREAM_RAW_OVERLAY
+        elif command == TCP_STREAM_THRESHOLD:
+            self.stream_mode = TCP_STREAM_THRESHOLD
+        elif command == TCP_STREAM_THRESHOLD_OVERLAY:
+            self.stream_mode = TCP_STREAM_THRESHOLD_OVERLAY
+        else:
+            print("Unknown command: " + command)
+
+    def camera_controller_callback(self, idle, direction):
+        if idle or not self.fish_drive:
+            controller.send_velocity(0, 0, 0)
+        else:
+            print("move " + str(direction))
+            
+            forward_speed = int(fish_speed * np.cos(direction))
+            sideways_speed = int(fish_speed * np.sin(direction))
+            # controller.send_velocity(forward_speed, sideways_speed, 0)
 
 if __name__ == "__main__":
     controller = Controller()
+    command = CommandWrapper(controller)
 
-    camera_client = CameraClient(camera_controller_callback)
-    server = Server(command_receive_handler, camera_client.tcp_connection_receive_handler)
+    camera_client = CameraClient(command)
+    server = Server(command.command_receive_handler, camera_client.tcp_connection_receive_handler)
 
     thread_server = Thread(target=server.server_start)
     thread_camera = Thread(target=camera_client.sender_task)

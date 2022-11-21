@@ -38,8 +38,8 @@ class Controller:
         time.sleep(0.05)
 
         while True:
-            if time.time() * 1000 - time_ms > 1000:
-                print("\nERROR: Failed to receive acknowledgement")
+            if time.time() * 1000 - time_ms > 100:
+                # print("\nERROR: Failed to receive acknowledgement")
                 return 1
 
             try:
@@ -53,6 +53,7 @@ class Controller:
 
             # find the start of a packet
             while len(rx_buffer) > 0 and rx_buffer[0] != 0xFE:
+                print("POP: ", rx_buffer[0])
                 rx_buffer.pop(0)
 
             # minimum packet size is 3 bytes

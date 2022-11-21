@@ -6,14 +6,18 @@ import socket
 import time
 from tracking import Tracking
 import traceback
+from config import *
 
 class CameraClient:
 
-    def __init__(self, controller_callback):
+    def __init__(self, command):
         self.cap = cv2.VideoCapture(0)
+        self.cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+
         self.rpi_name = socket.gethostname()
         self.ip = ''
-        self.controller_callback = controller_callback
+        self.command = command
+        self.recording_started = False
 
     def __del__(self):
         self.cap.release()
@@ -34,19 +38,19 @@ class CameraClient:
         self.sender = self.create_sender()
         tracker = Tracking()
 
-        
         while(True):
             _, frame = self.cap.read()
 
             # do the tracking stuff
-            frame_original = frame.copy()
-            ret, contour, filter = tracker.find_contour(frame)
+            frame_raw = frame.copy()
+            ret, contour, frame_threshold_overlay, frame_threshold = tracker.find_contour(frame)
+            frame_raw_overlay = frame_raw.copy()
             if ret:
                 # found fish
                 center, angle = tracker.calculate_direction(contour, frame)
                 idle = tracker.is_in_idle_threshold(center, angle)
-                tracker.add_visuals(frame, contour, center, angle, idle)
-                tracker.add_visuals(filter, contour, center, angle, idle)
+                tracker.add_visuals(frame_raw_overlay, contour, center, angle, idle)
+                tracker.add_visuals(frame_threshold_overlay, contour, center, angle, idle)
 
                 direction = angle + 90
                 if direction > 180:
@@ -58,10 +62,21 @@ class CameraClient:
                 direction = 0
                 tracker.add_visuals_outline(frame)
                 
-            # frame = filter
+            if self.command.stream_mode == TCP_STREAM_RAW:
+                frame = frame_raw
+            elif self.command.stream_mode == TCP_STREAM_RAW_OVERLAY:
+                frame = frame_raw_overlay
+            elif self.command.stream_mode == TCP_STREAM_THRESHOLD:
+                frame = frame_threshold
+            elif self.command.stream_mode == TCP_STREAM_THRESHOLD_OVERLAY:
+                frame = frame_threshold_overlay
+            else:
+                frame = frame_raw_overlay
+
+            self.video_recorder_handler(frame_raw, frame_raw_overlay, frame_threshold_overlay)
             frame = cv2.resize(frame, (0, 0), fx=0.50, fy=0.50)
 
-            self.controller_callback(idle, direction)
+            self.command.camera_controller_callback(idle, direction)
 
             try:
                 self.sender.send_image(self.rpi_name, frame)
@@ -70,3 +85,24 @@ class CameraClient:
                 self.sender.close()
                 # print("Attempting to reconnect to server...")
                 self.sender = self.create_sender()
+
+    def video_recorder_handler(self, frame1, frame2, frame3):
+        do_recording = self.command.recording
+
+        if do_recording:
+            if not self.recording_started:
+                self.recording_started = True
+                self.video_recorder1 = cv2.VideoWriter(SAVED_VIDEOS_DIRECTORY_PATH + 'video1.avi', cv2.VideoWriter_fourcc(*'XVID'), 5.0, IMAGE_DIMENSIONS)
+                self.video_recorder2 = cv2.VideoWriter(SAVED_VIDEOS_DIRECTORY_PATH + 'video2.avi', cv2.VideoWriter_fourcc(*'XVID'), 5.0, IMAGE_DIMENSIONS)
+                self.video_recorder3 = cv2.VideoWriter(SAVED_VIDEOS_DIRECTORY_PATH + 'video3.avi', cv2.VideoWriter_fourcc(*'XVID'), 5.0, IMAGE_DIMENSIONS)
+                print("Recording started!")
+
+            self.video_recorder1.write(frame1)
+            self.video_recorder2.write(frame2)
+            self.video_recorder3.write(frame3)
+        elif self.recording_started:
+            self.recording_started = False
+            self.video_recorder1.release()
+            self.video_recorder2.release()
+            self.video_recorder3.release()
+            print("Recording stopped!")
