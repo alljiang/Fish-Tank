@@ -1,4 +1,3 @@
-
 from PyQt6 import QtCore, QtGui, QtWidgets, uic
 from PyQt6.QtCore import QTimer, Qt
 import numpy as np
@@ -46,13 +45,21 @@ class Ui(object):
 
         self.mainWindow.btn_led_off.clicked.connect(self.button_led_off_handler)
         self.mainWindow.btn_led_on.clicked.connect(self.button_led_on_handler)
-        self.mainWindow.btn_led_party.clicked.connect(self.btn_led_party_handler)
+        self.mainWindow.btn_led_party.clicked.connect(self.button_led_party_handler)
         self.mainWindow.slider_led_r.valueChanged.connect(self.slider_led_r_handler)
         self.mainWindow.slider_led_g.valueChanged.connect(self.slider_led_g_handler)
         self.mainWindow.slider_led_b.valueChanged.connect(self.slider_led_b_handler)
         self.mainWindow.slider_led_r.setValue(LED_R_DEFAULT)
         self.mainWindow.slider_led_g.setValue(LED_G_DEFAULT)
         self.mainWindow.slider_led_b.setValue(LED_B_DEFAULT)
+        
+        self.mainWindow.btn_recording_start.clicked.connect(self.button_recording_start_handler)
+        self.mainWindow.btn_recording_stop.clicked.connect(self.button_recording_stop_handler)
+        
+        self.mainWindow.btn_stream_raw.clicked.connect(self.button_stream_raw_handler)
+        self.mainWindow.btn_stream_raw_overlay.clicked.connect(self.button_stream_raw_overlay_handler)
+        self.mainWindow.btn_stream_threshold.clicked.connect(self.button_stream_threshold_handler)
+        self.mainWindow.btn_stream_threshold_overlay.clicked.connect(self.button_stream_threshold_overlay_handler)
         
         self.mainWindow.cb_keyboard.keyPressEvent = self.key_event_handler
 
@@ -129,7 +136,7 @@ class Ui(object):
         b = self.mainWindow.slider_led_b.value()
         communication.send_and_receive_ack(TCP_LED_RGB + str(r) + "," + str(g) + "," + str(b))
     
-    def btn_led_party_handler(self):
+    def button_led_party_handler(self):
         communication.send_and_receive_ack(TCP_LED_PARTY)
 
     def slider_led_r_handler(self):
@@ -146,6 +153,24 @@ class Ui(object):
         value = self.mainWindow.slider_led_b.value()
         value = int(round(value / 255.0 * 100))
         self.mainWindow.label_led_b.setText(str(value) + "%")
+
+    def button_recording_start_handler(self):
+        communication.send_and_receive_ack(TCP_RECORDING_START)
+
+    def button_recording_stop_handler(self):
+        communication.send_and_receive_ack(TCP_RECORDING_STOP)
+
+    def button_stream_raw_handler(self):
+        communication.send_and_receive_ack(TCP_STREAM_RAW)
+
+    def button_stream_raw_overlay_handler(self):
+        communication.send_and_receive_ack(TCP_STREAM_RAW_OVERLAY)
+    
+    def button_stream_threshold_handler(self):
+        communication.send_and_receive_ack(TCP_STREAM_THRESHOLD)
+    
+    def button_stream_threshold_overlay_handler(self):
+        communication.send_and_receive_ack(TCP_STREAM_THRESHOLD_OVERLAY)
 
     def key_event_handler(self, event):
         to_send = self.mainWindow.cb_keyboard.isChecked()

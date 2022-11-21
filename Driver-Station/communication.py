@@ -14,6 +14,7 @@ class Communication():
         self.port = FISH_TANK_PORT  # socket server port number
 
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # instantiate
+        self.client_socket.settimeout(10)
         self.client_socket.connect((self.host, self.port))  # connect to the server
 
     def send(self, string):

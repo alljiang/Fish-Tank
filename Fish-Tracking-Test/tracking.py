@@ -248,8 +248,8 @@ output_name = input_video.split("\\")[-1].split(".")[0] + "-output.avi"
 new_video = cv2.VideoWriter("Fish-Tracking-Test\\output\\" + output_name, cv2.VideoWriter_fourcc(*"MJPG"), 10, (640, 480))
 
 # ROI selection
-# ret, frame = cap.read()
-# tracker.find_center_gui(frame)
+ret, frame = cap.read()
+tracker.find_center_gui(frame)
 
 for i in range(0, 2000):
     ret, frame = cap.read()
